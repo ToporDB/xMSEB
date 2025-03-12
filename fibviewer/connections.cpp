@@ -31,7 +31,6 @@ Connections::Connections(QString nname, QString ename)
                               ((QString)(vals.at(1))).toFloat(),
                               ((QString)(vals.at(2))).toFloat());
         nodes << *anode;
-
     }
     n.close();
     qDebug() << "nodes read";
@@ -64,19 +63,94 @@ Connections::Connections(QString nname, QString ename)
 
 }
 
-Connections::Connections(QString fib){
+Connections::Connections(QString fib) {
     QFile n(fib);
-    if (!n.open(QIODevice::ReadOnly)) qDebug() << "vtk unreadable: " << fib;
+    if (!n.open(QIODevice::ReadOnly)) {
+        qDebug() << "vtk unreadable: " << fib;
+        return;
+    }
+
+    // Check if the file is ASCII or Binary by reading the header
+    QTextStream ns(&n);
+    ns.readLine();
+    ns.readLine();
+    QString secondLine = ns.readLine();
+
+    // Reset the file pointer and start reading as ASCII if the header contains "ASCII"
+    n.seek(0);
+
+    if (secondLine.contains("ASCII")) {
+        qDebug() << "Detected ASCII format";
+        readAscii(n);
+    } else {
+        qDebug() << "Detected Binary format";
+        readBinary(n);
+    }
+
+    n.close();
+    calculateBounds();
+    createPrims();
+}
+
+void Connections::readAscii(QFile& n) {
     QTextStream ns(&n);
     QString nl;
+
+    // Skip the first 4 lines (VTK header)
+    for (int i = 0; i < 4; i++) {
+        ns.readLine();
+    }
+
+    // Read POINTS section
+    nl = ns.readLine();
+    QStringList vals = nl.split(" ");
+    int np = vals[1].toInt();
+    qDebug() << "Number of points: " << np;
+
+    // Read points
+    for (int i = 0; i < np; i++) {
+        nl = ns.readLine();
+        QStringList pointData = nl.split(" ", Qt::SkipEmptyParts);
+        nodes.append(QVector3D(pointData[0].toFloat(), pointData[1].toFloat(), pointData[2].toFloat()));
+    }
+
+    // Read LINES section
+    while (!ns.atEnd()) {
+        nl = ns.readLine();
+        if (nl.startsWith("LINES") || nl.startsWith("POLYGONS")) {
+            break;
+        }
+    }
+
+    vals = nl.split(" ");
+    int ncons = vals[1].toInt();
+    qDebug() << "Number of connections: " << ncons;
+
+    // Read connections (LINES)
+    for (int i = 0; i < ncons; i++) {
+        nl = ns.readLine();
+        QStringList connData = nl.split(" ", Qt::SkipEmptyParts);
+        int numpoints = connData[0].toInt();
+
+        Edge* aedge = new Edge(nodes.at(connData[1].toInt()), nodes.at(connData[numpoints].toInt()));
+        for (int j = 2; j <= numpoints; j++) {
+            aedge->points << nodes.at(connData[j].toInt());
+        }
+        edges.append(aedge);
+    }
+}
+
+void Connections::readBinary(QFile& n) {
+    QString nl;
+    QTextStream ns(&n);
     QDataStream ins(&n);
     ins.setByteOrder(QDataStream::BigEndian);
     ins.setFloatingPointPrecision(QDataStream::SinglePrecision);
-    nl = ns.readLine(); //skip first lines;
-    nl = ns.readLine(); //TODO: Other types of stuff...
-    nl = ns.readLine();
-    nl = ns.readLine();
-    nl = ns.readLine();
+
+    for (int i = 0; i < 5; ++i) {
+        nl = ns.readLine(); //skip first lines;
+    }
+
     ns.pos();
     QStringList vals = nl.split(" ");
     int np = ((QString)(vals.at(1))).toInt();
@@ -96,7 +170,7 @@ Connections::Connections(QString fib){
     nl = ns.readLine();
     vals = nl.split(" ");
     int ncons = ((QString)(vals.at(1))).toInt();
-    int nps = ((QString)(vals.at(2))).toInt();
+    // int nps = ((QString)(vals.at(2))).toInt();
     qDebug() << "number of connections: " << ncons;
 
     ns.pos();
@@ -115,13 +189,9 @@ Connections::Connections(QString fib){
         }
         edges << aedge;
     }
-    n.close();
-
-    calculateBounds();
-
-    createPrims();
-
 }
+
+
 
 void Connections::createPrims(){
     for (int i = 0; i < edges.size(); ++i) {
@@ -184,7 +254,7 @@ void Connections::paintGL()
         Primitive* p = prims.at(i);
         p->paintGL();
     }
-    //paintPoints();
+    paintPoints();
     glDisable(GL_DEPTH_TEST);
 }
 
@@ -214,11 +284,11 @@ void Connections::writeBinaryVTK(QString filename){
     int n = edges.size();
     int m = edges.at(0)->points.size();
 
-    outt << "# vtk DataFile Version 3.0" << endl;
-    outt << "I am a header! Yay!" << endl;
-    outt << "BINARY" << endl;
-    outt << "DATASET POLYDATA" << endl;
-    outt << "POINTS " << m*n << " float" << endl;
+    outt << "# vtk DataFile Version 3.0" << Qt::endl;
+    outt << "I am a header! Yay!" << Qt::endl;
+    outt << "BINARY" << Qt::endl;
+    outt << "DATASET POLYDATA" << Qt::endl;
+    outt << "POINTS " << m*n << " float" << Qt::endl;
 
     for (int e = 0; e<n; e++){
         Edge* ed = edges.at(e);
@@ -227,9 +297,9 @@ void Connections::writeBinaryVTK(QString filename){
             out << (float)po.x() << (float)po.y() << (float)po.z();
         }
     }
-    outt << endl;
+    outt << Qt::endl;
 
-    outt << "LINES " << n << " " << n*(m+1) << endl;
+    outt << "LINES " << n << " " << n*(m+1) << Qt::endl;
     int i = 0;
     for (int e = 0; e<n; e++){
         out << m;
@@ -237,7 +307,7 @@ void Connections::writeBinaryVTK(QString filename){
             out << i++;
         }
     }
-    outt << endl;
+    outt << Qt::endl;
 
     file.close();
     qDebug() << "file written";
@@ -247,18 +317,18 @@ void Connections::writeCSVs(){
     QFile cfile("coords.csv");
     cfile.open(QIODevice::WriteOnly);
     QTextStream out(&cfile);
-    out << "id,label,x,y" << endl;
+    out << "id,label,x,y" << Qt::endl;
     for (int i = 0; i<nodes.length(); i++){
-        out << i << "," << i << "," << nodes.at(i).x() << "," << nodes.at(i).y() << endl;
+        out << i << "," << i << "," << nodes.at(i).x() << "," << nodes.at(i).y() << Qt::endl;
     }
     cfile.close();
 
     QFile ffile("cons.csv");
     ffile.open(QIODevice::WriteOnly);
     QTextStream fout(&ffile);
-    fout << "from,to,val" << endl;
+    fout << "from,to,val" << Qt::endl;
     for (int i = 0; i<edges.length(); i++){
-        fout << nodes.indexOf(edges.at(i)->fn) << "," << nodes.indexOf(edges.at(i)->tn) << "," << 1 << endl;
+        fout << nodes.indexOf(edges.at(i)->fn) << "," << nodes.indexOf(edges.at(i)->tn) << "," << 1 << Qt::endl;
     }
     ffile.close();
 }
@@ -274,7 +344,7 @@ void Connections::writeOBJ(QString filename){
         qDebug() << e;
         for (int p=0; p<ed->points.size(); p++){
             QVector3D po = ed->points.at(p);
-            out << "v " << (float)po.x() << " " <<(float)po.y() << " " << (float)po.z() << endl;
+            out << "v " << (float)po.x() << " " <<(float)po.y() << " " << (float)po.z() << Qt::endl;
         }
     }
 
@@ -292,7 +362,7 @@ void Connections::writeOBJ(QString filename){
         for (int p=0; p<ed->points.size()-2; p++){
             out << " " << (i-2)-p;
         }
-        out << endl;
+        out << Qt::endl;
     }
     file.close();
 }

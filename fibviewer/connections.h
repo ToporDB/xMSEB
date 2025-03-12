@@ -14,6 +14,9 @@
 
 class Connections
 {
+    void readAscii(QFile& n);
+    void readBinary(QFile& n);
+
 public:
     Connections();
     Connections(QString nname, QString ename);

@@ -52,9 +52,9 @@ Connections::Connections(QString nname, QString ename, QString fileName)
         QString endCluster;
         el = es.readLine();
 
-        QStringList evals = el.split(" ",QString::SkipEmptyParts);
-        f = ((QString)(evals.at(0))).toInt() - 1;
-        t = ((QString)(evals.at(1))).toInt() - 1;
+        QStringList evals = el.split(" ", QString::SkipEmptyParts);
+        f = ((QString)(evals.at(0))).toInt();
+        t = ((QString)(evals.at(1))).toInt();
         weight = ((QString)(evals.at(2)));  //Read the edge weight as well
         startCluster = ((QString)(evals.at(3)));
         endCluster = ((QString)(evals.at(4)));
@@ -191,7 +191,7 @@ void Connections::attract(){
 
                     fsum += weight;
                     f += weight * pe;
-                    QVector3D df;
+                    // QVector3D df;
                 }
             }
 
@@ -300,11 +300,11 @@ void Connections::writeVTK(){
     int n = edges.size();
     int m = edges.at(0)->points.size();
 
-    out << "# vtk DataFile Version 3.0" << endl;
-    out << "I am a header! Yay!" << endl;
-    out << "ASCII" << endl;
-    out << "DATASET POLYDATA" << endl;
-    out << "POINTS " << m*n << " float" << endl;
+    out << "# vtk DataFile Version 3.0" << Qt::endl;
+    out << "I am a header! Yay!" << Qt::endl;
+    out << "ASCII" << Qt::endl;
+    out << "DATASET POLYDATA" << Qt::endl;
+    out << "POINTS " << m*n << " float" << Qt::endl;
 
     for (int e = 0; e<n; e++){
         Edge* ed = edges.at(e);
@@ -314,18 +314,18 @@ void Connections::writeVTK(){
             QString startCluster = ed->startCluster;
             QString endCluster = ed->endCluster;
             out.setRealNumberPrecision(10);
-            out << (float)po.x() << " " << (float)po.y()  << " " << (float)po.z() << " " << weight << " " << startCluster << " " << endCluster << endl;
+            out << (float)po.x() << " " << (float)po.y()  << " " << (float)po.z() << " " << weight << " " << startCluster << " " << endCluster << Qt::endl;
         }
     }
 
-    out << "LINES " << n << " " << n*(m+1) << endl;
+    out << "LINES " << n << " " << n*(m+1) << Qt::endl;
     int i = 0;
     for (int e = 0; e<n; e++){
         out << m;
         for (int p=0; p<m; p++){
             out << " " << i++;
         }
-        out << endl;
+        out << Qt::endl;
     }
 
     file.close();
@@ -351,11 +351,11 @@ void Connections::writeBinaryVTK(QString name){
     int n = edges.size();
     int m = edges.at(0)->points.size();
 
-    outt << "# vtk DataFile Version 3.0" << endl;
-    outt << "I am a header! Yay!" << endl;
-    outt << "BINARY" << endl;
-    outt << "DATASET POLYDATA" << endl;
-    outt << "POINTS " << m*n << " float" << endl;
+    outt << "# vtk DataFile Version 3.0" << Qt::endl;
+    outt << "I am a header! Yay!" << Qt::endl;
+    outt << "BINARY" << Qt::endl;
+    outt << "DATASET POLYDATA" << Qt::endl;
+    outt << "POINTS " << m*n << " float" << Qt::endl;
 
     for (int e = 0; e<n; e++){
         Edge* ed = edges.at(e);
@@ -364,9 +364,9 @@ void Connections::writeBinaryVTK(QString name){
             out << (float)po.x() << (float)po.y() << (float)po.z();
         }
     }
-    outt << endl;
+    outt << Qt::endl;
 
-    outt << "LINES " << n << " " << n*(m+1) << endl;
+    outt << "LINES " << n << " " << n*(m+1) << Qt::endl;
     int i = 0;
     for (int e = 0; e<n; e++){
         out << m;
@@ -374,7 +374,7 @@ void Connections::writeBinaryVTK(QString name){
             out << i++;
         }
     }
-    outt << endl;
+    outt << Qt::endl;
 
     file.close();
 
@@ -394,7 +394,7 @@ void Connections::writeSegments(){
         Edge* ed = edges.at(e);
         for (int p=0; p<ed->points.size(); p++){
             QVector3D po = ed->points.at(p);
-            out << (float)po.x() << " " << (float)po.y()  << " " << (float)po.z() << " " << e << endl;
+            out << (float)po.x() << " " << (float)po.y()  << " " << (float)po.z() << " " << e << Qt::endl;
         }
     }
 
@@ -403,7 +403,7 @@ void Connections::writeSegments(){
 }
 
 QString Connections::name() {
-    return prefix + ".txt";
+    return prefix + ".fib";
 //            "_c_thr" + QString::number(c_thr,'f',4) +
 //            "_start_i" + QString("%1").arg(start_i,4,10,QLatin1Char('0')) +
 //            "_numcycles" + QString("%1").arg(numcycles,2,10,QLatin1Char('0') ) +
