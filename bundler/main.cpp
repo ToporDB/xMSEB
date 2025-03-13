@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 
     cons->fullAttract();
     if (arg("out")!="") {
-        cons->writeBinaryVTK();
+        cons->writeBinaryVTK(arg("out"));
     } else {
         cons->writeBinaryVTK();
     }
