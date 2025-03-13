@@ -326,9 +326,9 @@ void Connections::writeVTK(){
     out << "LINES " << n << " " << n*(m+1) << Qt::endl;
     int i = 0;
     for (int e = 0; e<n; e++){
-        out << m << " ";
-        for (int p=0; p<m+1; p++){
-            out << i++ << " ";
+        out << m;
+        for (int p=0; p<m; p++){
+            out << " " << i++;
         }
         out << Qt::endl;
     }
@@ -344,7 +344,7 @@ void Connections::writeBinaryVTK(){
 
 void Connections::writeBinaryVTK(QString name){
 
-    qDebug() << "writing: " << name << ".fib";
+    qDebug() << "writing: " << name;
     QFile file(name+".fib");
     if (!file.open(QIODevice::WriteOnly)) qDebug() << "error opening file for writing";
     QDataStream out(&file);
@@ -382,7 +382,7 @@ void Connections::writeBinaryVTK(QString name){
     outt << Qt::endl;
 
     file.close();
-    qDebug() << "file written";
+
 }
 
 
@@ -408,7 +408,7 @@ void Connections::writeSegments(){
 }
 
 QString Connections::name() {
-    return prefix + ".fib";
+    return prefix;
 //            "_c_thr" + QString::number(c_thr,'f',4) +
 //            "_start_i" + QString("%1").arg(start_i,4,10,QLatin1Char('0')) +
 //            "_numcycles" + QString("%1").arg(numcycles,2,10,QLatin1Char('0') ) +

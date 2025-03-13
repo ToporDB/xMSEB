@@ -132,8 +132,10 @@ void Connections::readAscii(QFile& n) {
         QStringList connData = nl.split(" ", Qt::SkipEmptyParts);
         int numpoints = connData[0].toInt();
 
-        Edge* aedge = new Edge(nodes.at(connData[1].toInt()), nodes.at(connData[numpoints].toInt()));
-        for (int j = 2; j <= numpoints; j++) {
+        // Corrected index for the last point
+        Edge* aedge = new Edge(nodes.at(connData[0].toInt()), nodes.at(connData[numpoints].toInt()));
+
+        for (int j = 0; j <= numpoints; j++) {
             aedge->points << nodes.at(connData[j].toInt());
         }
         edges.append(aedge);
