@@ -26,5 +26,5 @@ HEADERS += \
     connections.h \
     edge.h
 
-
+OUTPUT += Console
 

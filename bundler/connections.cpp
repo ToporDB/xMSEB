@@ -77,7 +77,12 @@ Connections::Connections(QString fib){
     params();
     prefix = fib;
     QFile n(fib);
-    if (!n.open(QIODevice::ReadOnly)) qDebug() << "vtk unreadable: " << fib;
+
+    if (!n.open(QIODevice::ReadOnly)) {
+        qDebug() << "vtk unreadable: " << fib;
+        exit(1);
+    }
+
     QTextStream ns(&n);
     QString nl;
     QDataStream ins(&n);
@@ -187,7 +192,7 @@ void Connections::attract(){
                     double weightOfTheComparedEdge = edges.at(ef)->wt.toDouble();
 //                    qDebug() << weightOfTheComparedEdge;
                     float de = (pe-p).length();
-                    double weight =  qExp(-(de*de)/(2*bell*bell))*weightOfTheComparedEdge;
+                    double weight =  qExp(-(de*de)/(2*bell*bell)) / weightOfTheComparedEdge;
 
                     fsum += weight;
                     f += weight * pe;
