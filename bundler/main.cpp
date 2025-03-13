@@ -48,9 +48,11 @@ int main(int argc, char *argv[])
 
     cons->fullAttract();
     if (arg("out")!="") {
-        cons->writeBinaryVTK(arg("out"));
+        // cons->writeBinaryVTK(arg("out"));
+        cons->writeVTK();
     } else {
-        cons->writeBinaryVTK();
+        cons->writeVTK();
+        // cons->writeBinaryVTK();
     }
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);

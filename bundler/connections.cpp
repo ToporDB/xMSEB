@@ -61,7 +61,7 @@ Connections::Connections(QString nname, QString ename, QString fileName)
         Edge* aedge;
         try {
             aedge = new Edge(nodes.at(f), nodes.at(t), weight, startCluster, endCluster);
-        edges << aedge;
+            edges << aedge;
         } catch(QException& e) {
             qDebug() << "out of bounds error" << f << t;
         }
@@ -168,14 +168,20 @@ void Connections::attract(){
     #pragma omp parallel for
     for (int ie = 0; ie < edges.size(); ++ie) {
         Edge* e = edges.at(ie);
+        double weightOfThisEdge = e->wt.toDouble();
+        //double cThresholdHere = c_thr; //  + weightOfThisEdge/50.0;
+        //qDebug() << cThresholdHere;
+//        qDebug() << "Edge " << ie << "has parameters: " << e->fn << ", " << e->tn << ", " << e->wt;
         //for every point...
         for (int i=1; i<e->points.length()-1; i++){
             QVector3D p = e->points.at(i);
+            double edgeDepthFactor = (-1 * (i - (0)) * (i - (e->points.length())))/((e->points.length()/2)*(e->points.length()/2));
             double fsum = 0;
             QVector3D f(0,0,0);
             //for all attracting points...
             for (int ef=0; ef<edges.length(); ef++){
                 float c = comp(ie,ef);
+
                 if (c > c_thr) {
                     QVector3D pe;
                     if (e->flip(edges.at(ef))){
@@ -183,17 +189,20 @@ void Connections::attract(){
                     } else {
                         pe = edges.at(ef)->points.at((edges.at(ef)->points.length()-1)-i);
                     }
-
+                    double weightOfTheComparedEdge = edges.at(ef)->wt.toDouble();
+//                    qDebug() << weightOfTheComparedEdge;
                     float de = (pe-p).length();
-                    double weight = qExp(-(de*de)/(2*bell*bell));
+                    double weight =  qExp(-(de*de)/(2*bell*bell)) / weightOfTheComparedEdge;
+
                     fsum += weight;
-                    f += weight*pe;
-                    QVector3D df;
+                    f += weight * pe;
+                    // QVector3D df;
                 }
             }
 
             f /= fsum;
-            QVector3D force = (f-p);
+            QVector3D force = edgeDepthFactor * edgeDepthFactor * (f-p)/(weightOfThisEdge);
+//            QVector3D force = (f-p)/(weightOfThisEdge);
             e->forces.replace(i,force);
         }
     }
@@ -289,35 +298,39 @@ float Connections::comp(int i, int j) {
 void Connections::writeVTK(){
     qDebug() << "writing file";
 
-    QFile file("brain_dti.vtk");
+    QFile file(name());
     if (!file.open(QIODevice::WriteOnly)) qDebug() << "Error opening file for writing";
     QTextStream out(&file);
 
     int n = edges.size();
     int m = edges.at(0)->points.size();
 
-    out << "# vtk DataFile Version 3.0" << endl;
-    out << "I am a header! Yay!" << endl;
-    out << "ASCII" << endl;
-    out << "DATASET POLYDATA" << endl;
-    out << "POINTS " << m*n << " float" << endl;
+    out << "# vtk DataFile Version 3.0" << Qt::endl;
+    out << "I am a header! Yay!" << Qt::endl;
+    out << "ASCII" << Qt::endl;
+    out << "DATASET POLYDATA" << Qt::endl;
+    out << "POINTS " << m*n << " float" << Qt::endl;
 
     for (int e = 0; e<n; e++){
         Edge* ed = edges.at(e);
         for (int p=0; p<ed->points.size(); p++){
             QVector3D po = ed->points.at(p);
-            out << (float)po.x() << " " << (float)po.y()  << " " << (float)po.z() << endl;
+            double weight = ed->wt.toDouble();
+            QString startCluster = ed->startCluster;
+            QString endCluster = ed->endCluster;
+            out.setRealNumberPrecision(10);
+            out << (float)po.x() << " " << (float)po.y()  << " " << (float)po.z() << " " << weight << " " << startCluster << " " << endCluster << Qt::endl;
         }
     }
 
-    out << "LINES " << n << " " << n*(m+1) << endl;
+    out << "LINES " << n << " " << n*(m+1) << Qt::endl;
     int i = 0;
     for (int e = 0; e<n; e++){
-        out << m;
-        for (int p=0; p<m; p++){
-            out << " " << i++;
+        out << m << " ";
+        for (int p=0; p<m+1; p++){
+            out << i++ << " ";
         }
-        out << endl;
+        out << Qt::endl;
     }
 
     file.close();
@@ -343,11 +356,11 @@ void Connections::writeBinaryVTK(QString name){
     int n = edges.size();
     int m = edges.at(0)->points.size();
 
-    outt << "# vtk DataFile Version 3.0" << endl;
-    outt << "I am a header! Yay!" << endl;
-    outt << "BINARY" << endl;
-    outt << "DATASET POLYDATA" << endl;
-    outt << "POINTS " << m*n << " float" << endl;
+    outt << "# vtk DataFile Version 3.0" << Qt::endl;
+    outt << "I am a header! Yay!" << Qt::endl;
+    outt << "BINARY" << Qt::endl;
+    outt << "DATASET POLYDATA" << Qt::endl;
+    outt << "POINTS " << m*n << " float" << Qt::endl;
 
     for (int e = 0; e<n; e++){
         Edge* ed = edges.at(e);
@@ -356,9 +369,9 @@ void Connections::writeBinaryVTK(QString name){
             out << (float)po.x() << (float)po.y() << (float)po.z();
         }
     }
-    outt << endl;
+    outt << Qt::endl;
 
-    outt << "LINES " << n << " " << n*(m+1) << endl;
+    outt << "LINES " << n << " " << n*(m+1) << Qt::endl;
     int i = 0;
     for (int e = 0; e<n; e++){
         out << m;
@@ -366,7 +379,7 @@ void Connections::writeBinaryVTK(QString name){
             out << i++;
         }
     }
-    outt << endl;
+    outt << Qt::endl;
 
     file.close();
     qDebug() << "file written";
@@ -386,7 +399,7 @@ void Connections::writeSegments(){
         Edge* ed = edges.at(e);
         for (int p=0; p<ed->points.size(); p++){
             QVector3D po = ed->points.at(p);
-            out << (float)po.x() << " " << (float)po.y()  << " " << (float)po.z() << " " << e << endl;
+            out << (float)po.x() << " " << (float)po.y()  << " " << (float)po.z() << " " << e << Qt::endl;
         }
     }
 
@@ -395,8 +408,9 @@ void Connections::writeSegments(){
 }
 
 QString Connections::name() {
-    return prefix +
-            "_c_thr" + QString::number(c_thr,'f',4) +
-            "_start_i" + QString("%1").arg(start_i,4,10,QLatin1Char('0')) +
-            "_numcycles" + QString("%1").arg(numcycles,2,10,QLatin1Char('0') );
+    return prefix + ".fib";
+//            "_c_thr" + QString::number(c_thr,'f',4) +
+//            "_start_i" + QString("%1").arg(start_i,4,10,QLatin1Char('0')) +
+//            "_numcycles" + QString("%1").arg(numcycles,2,10,QLatin1Char('0') ) +
+//            ".txt";
 }
