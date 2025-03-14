@@ -175,7 +175,7 @@ void Connections::attract(){
         //for every point...
         for (int i=1; i<e->points.length()-1; i++){
             QVector3D p = e->points.at(i);
-            double edgeDepthFactor = (-1 * (i - (0)) * (i - (e->points.length())))/((e->points.length()/2)*(e->points.length()/2));
+            double edgeDepthFactor = (-i * (i - (e->points.length())))/((e->points.length()/2)*(e->points.length()/2));
             double fsum = 0;
             QVector3D f(0,0,0);
             //for all attracting points...
@@ -192,7 +192,8 @@ void Connections::attract(){
                     double weightOfTheComparedEdge = edges.at(ef)->wt.toDouble();
 //                    qDebug() << weightOfTheComparedEdge;
                     float de = (pe-p).length();
-                    double weight =  qExp(-(de*de)/(2*bell*bell)) / weightOfTheComparedEdge;
+                    // TODO: c^2 or no c^2
+                    double weight =  qExp(-(de*de)/(2*bell*bell)) * weightOfTheComparedEdge; // * c*c;
 
                     fsum += weight;
                     f += weight * pe;
@@ -298,7 +299,7 @@ float Connections::comp(int i, int j) {
 void Connections::writeVTK(){
     qDebug() << "writing file";
 
-    QFile file(name());
+    QFile file(name() + ".vtk");
     if (!file.open(QIODevice::WriteOnly)) qDebug() << "Error opening file for writing";
     QTextStream out(&file);
 
@@ -345,7 +346,7 @@ void Connections::writeBinaryVTK(){
 void Connections::writeBinaryVTK(QString name){
 
     qDebug() << "writing: " << name;
-    QFile file(name+".fib");
+    QFile file(name+".vtk");
     if (!file.open(QIODevice::WriteOnly)) qDebug() << "error opening file for writing";
     QDataStream out(&file);
     QTextStream outt(&file);

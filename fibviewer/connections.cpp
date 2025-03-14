@@ -72,19 +72,20 @@ Connections::Connections(QString fib) {
 
     // Check if the file is ASCII or Binary by reading the header
     QTextStream ns(&n);
-    ns.readLine();
-    ns.readLine();
-    QString secondLine = ns.readLine();
+    QString nl;
 
-    // Reset the file pointer and start reading as ASCII if the header contains "ASCII"
-    n.seek(0);
-
-    if (secondLine.contains("ASCII")) {
-        qDebug() << "Detected ASCII format";
-        readAscii(n);
-    } else {
-        qDebug() << "Detected Binary format";
-        readBinary(n);
+    while (!ns.atEnd()) {
+        nl = ns.readLine();
+        if (nl.startsWith("ASCII")) {
+            qDebug() << "Detected ASCII format";
+            n.seek(0);
+            readAscii(n);
+        }
+        if (nl.startsWith("BINARY")) {
+            qDebug() << "Detected Binary format";
+            n.seek(0);
+            readBinary(n);
+        }
     }
 
     n.close();
@@ -96,13 +97,13 @@ void Connections::readAscii(QFile& n) {
     QTextStream ns(&n);
     QString nl;
 
-    // Skip the first 4 lines (VTK header)
-    for (int i = 0; i < 4; i++) {
-        ns.readLine();
+    while (!ns.atEnd()) {
+        nl = ns.readLine();
+        if (nl.startsWith("POINTS")) {
+            break;
+        }
     }
 
-    // Read POINTS section
-    nl = ns.readLine();
     QStringList vals = nl.split(" ");
     int np = vals[1].toInt();
     qDebug() << "Number of points: " << np;
@@ -117,7 +118,7 @@ void Connections::readAscii(QFile& n) {
     // Read LINES section
     while (!ns.atEnd()) {
         nl = ns.readLine();
-        if (nl.startsWith("LINES") || nl.startsWith("POLYGONS")) {
+        if (nl.startsWith("LINES")) {
             break;
         }
     }
@@ -132,10 +133,10 @@ void Connections::readAscii(QFile& n) {
         QStringList connData = nl.split(" ", Qt::SkipEmptyParts);
         int numpoints = connData[0].toInt();
 
-        // Corrected index for the last point
-        Edge* aedge = new Edge(nodes.at(connData[0].toInt()), nodes.at(connData[numpoints].toInt()));
+        Edge* aedge = new Edge(nodes.at(connData[1].toInt()), nodes.at(connData[numpoints].toInt()));
+        aedge->points.removeLast();
 
-        for (int j = 0; j <= numpoints; j++) {
+        for (int j = 1; j <= numpoints; j++) {
             aedge->points << nodes.at(connData[j].toInt());
         }
         edges.append(aedge);
@@ -149,8 +150,11 @@ void Connections::readBinary(QFile& n) {
     ins.setByteOrder(QDataStream::BigEndian);
     ins.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-    for (int i = 0; i < 5; ++i) {
-        nl = ns.readLine(); //skip first lines;
+    while (!ns.atEnd()) {
+        nl = ns.readLine();
+        if (nl.startsWith("POINTS")) {
+            break;
+        }
     }
 
     ns.pos();

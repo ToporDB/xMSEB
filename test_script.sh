@@ -36,7 +36,7 @@ if [[ "$1" == *.fib ]]; then
     "$BUNDLER" -fib "$FIB_FILE" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES"
 
     # Move and run FibViewer on the output file
-    FIB_TXT_FILE="${FIB_FILE}.fib"
+    FIB_TXT_FILE="${FIB_FILE}.vtk"
 else
     # Case: Using -nodes and -cons
     if [ "$#" -lt 3 ]; then
@@ -52,7 +52,7 @@ else
     "$BUNDLER" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES"
 
     # Move and run FibViewer on the output file
-    FIB_TXT_FILE="${OUTPUT_FILENAME}.fib"
+    FIB_TXT_FILE="${OUTPUT_FILENAME}.vtk"
 fi
 
 # Check if the output file was created
