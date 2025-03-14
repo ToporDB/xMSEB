@@ -27,7 +27,7 @@ Connections::Connections(QString nname, QString ename, QString fileName)
     while(!ns.atEnd()) {
         nl = ns.readLine();
 
-        QStringList vals = nl.split(" ", QString::SkipEmptyParts);
+        QStringList vals = nl.split(" ", Qt::SkipEmptyParts);
         QVector3D* anode;
         //x,y,z
         anode = new QVector3D(((QString)(vals.at(0))).toDouble(),
@@ -52,7 +52,7 @@ Connections::Connections(QString nname, QString ename, QString fileName)
         QString endCluster;
         el = es.readLine();
 
-        QStringList evals = el.split(" ", QString::SkipEmptyParts);
+        QStringList evals = el.split(" ", Qt::SkipEmptyParts);
         f = ((QString)(evals.at(0))).toInt();
         t = ((QString)(evals.at(1))).toInt();
         weight = ((QString)(evals.at(2)));  //Read the edge weight as well
