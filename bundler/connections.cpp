@@ -44,28 +44,31 @@ Connections::Connections(QString nname, QString ename, QString fileName)
     if (!e.open(QIODevice::ReadOnly)) qDebug("edges unreadable");
     QTextStream es(&e);
     QString el;
-    while(!es.atEnd()) {
-        int f;
-        int t;
-        QString weight;
-        QString startCluster;
-        QString endCluster;
+    while (!es.atEnd()) {
         el = es.readLine();
-
         QStringList evals = el.split(" ", Qt::SkipEmptyParts);
-        f = ((QString)(evals.at(0))).toInt();
-        t = ((QString)(evals.at(1))).toInt();
-        weight = ((QString)(evals.at(2)));  //Read the edge weight as well
-        startCluster = ((QString)(evals.at(3)));
-        endCluster = ((QString)(evals.at(4)));
-        Edge* aedge;
-        try {
-            aedge = new Edge(nodes.at(f), nodes.at(t), weight, startCluster, endCluster);
-            edges << aedge;
-        } catch(QException& e) {
-            qDebug() << "out of bounds error" << f << t;
+
+        if (evals.size() < 2) {
+            qDebug() << "Invalid edge line: " << el;
+            continue;
         }
-        // qDebug() << f << t;
+
+        int f = evals.at(0).toInt();
+        int t = evals.at(1).toInt();
+
+        // Check if weight is given; otherwise, set to 1.0
+        QString weight = (evals.size() > 2) ? evals.at(2) : "1.0";
+
+        // Check if start and end clusters are given; otherwise, set to "dummy"
+        QString startCluster = (evals.size() > 3) ? evals.at(3) : "dummy";
+        QString endCluster = (evals.size() > 4) ? evals.at(4) : "dummy";
+
+        try {
+            Edge* aedge = new Edge(nodes.at(f), nodes.at(t), weight, startCluster, endCluster);
+            edges << aedge;
+        } catch (QException& e) {
+            qDebug() << "Out of bounds error for nodes:" << f << t;
+        }
     }
     e.close();
 
@@ -134,9 +137,7 @@ Connections::Connections(QString fib){
         for (int pn = 0; pn < numpoints; pn++){
             ins >> ps[pn];
         }
-        Edge* aedge;
-
-        aedge = new Edge(nodes.at(ps[0]), nodes.at(ps[numpoints-1]), weight, startCluster, endCluster);
+        Edge* aedge = new Edge(nodes.at(ps[0]), nodes.at(ps[numpoints-1]), weight, startCluster, endCluster);
         aedge->points.removeLast();
         for (int pn = 1; pn < numpoints; pn++){
             aedge->points << nodes.at(ps[pn]);
@@ -192,8 +193,8 @@ void Connections::attract(){
                     double weightOfTheComparedEdge = edges.at(ef)->wt.toDouble();
 //                    qDebug() << weightOfTheComparedEdge;
                     float de = (pe-p).length();
-                    // TODO: c^2 or no c^2
-                    double weight =  qExp(-(de*de)/(2*bell*bell)) * weightOfTheComparedEdge; // * c*c;
+
+                    double weight =  qExp(-(de*de)/(2*bell*bell)) * weightOfTheComparedEdge; // * c * c;
 
                     fsum += weight;
                     f += weight * pe;
@@ -230,8 +231,8 @@ void Connections::fullAttract() {
         i--;
         spnow *= spfac;
     }
-    //for further subdivision without attraction
-    for (int i=1; i<smooth; i++){
+    // for further subdivision without attraction
+    for (int i=1; i<smooth && numcycles != 0; i++){
         subdivide(qRound(spnow)+i);
         qDebug() << "number of subd. points: " << qRound(spnow)+i;
     }

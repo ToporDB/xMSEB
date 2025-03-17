@@ -24,7 +24,7 @@ Connections::Connections(QString nname, QString ename)
     while(!ns.atEnd()) {
         nl = ns.readLine();
 
-        QStringList vals = nl.split(" ", QString::SkipEmptyParts);
+        QStringList vals = nl.split(" ", Qt::SkipEmptyParts);
         QVector3D* anode;
         //x,y,z
         anode = new QVector3D(((QString)(vals.at(0))).toFloat(),
