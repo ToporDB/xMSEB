@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 15.0.1, 2025-03-14T16:45:29. -->
+<!-- Written by QtCreator 15.0.1, 2025-03-16T14:13:15. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -248,7 +248,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/home/topor/Documents/Mesteri/Aarhus/In-Uni/4.sem/extended_mean_shifting_3d_edge_bundling/bundler/bundler.pro</value>
     <value type="bool" key="ProjectExplorer.RunConfiguration.Customized">true</value>
-    <value type="QString" key="RunConfiguration.Arguments">-fib /home/topor/Documents/Mesteri/Aarhus/In-Uni/4.sem/extended_mean_shifting_3d_edge_bundling/inputs/artificial.fib  -start_i 5 -numcycles 1</value>
+    <value type="QString" key="RunConfiguration.Arguments">-nodes /home/topor/Documents/Mesteri/Aarhus/In-Uni/4.sem/extended_mean_shifting_3d_edge_bundling/inputs/negative_edge_nodes.txt -cons /home/topor/Documents/Mesteri/Aarhus/In-Uni/4.sem/extended_mean_shifting_3d_edge_bundling/inputs/negative_edge_edges.txt -fileName negative_edges -numcycles 5</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>

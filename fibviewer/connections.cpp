@@ -45,7 +45,7 @@ Connections::Connections(QString nname, QString ename)
         int t;
         el = es.readLine();
 
-        QStringList evals = el.split(" ",QString::SkipEmptyParts);
+        QStringList evals = el.split(" ", Qt::SkipEmptyParts);
         f = ((QString)(evals.at(0))).toInt();
         t = ((QString)(evals.at(1))).toInt();
 
@@ -136,7 +136,7 @@ void Connections::readAscii(QFile& n) {
         Edge* aedge = new Edge(nodes.at(connData[1].toInt()), nodes.at(connData[numpoints].toInt()));
         aedge->points.removeLast();
 
-        for (int j = 1; j <= numpoints; j++) {
+        for (int j = 2; j <= numpoints; j++) {
             aedge->points << nodes.at(connData[j].toInt());
         }
         edges.append(aedge);
@@ -187,8 +187,7 @@ void Connections::readBinary(QFile& n) {
         for (int pn = 0; pn < numpoints; pn++){
             ins >> ps[pn];
         }
-        Edge* aedge;
-        aedge = new Edge(nodes.at(ps[0]), nodes.at(ps[numpoints-1]));
+        Edge* aedge = new Edge(nodes.at(ps[0]), nodes.at(ps[numpoints-1]));
         aedge->points.removeLast();
         for (int pn = 1; pn < numpoints; pn++){
             aedge->points << nodes.at(ps[pn]);

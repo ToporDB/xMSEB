@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 15.0.1, 2025-03-14T16:45:30. -->
+<!-- Written by QtCreator 15.0.1, 2025-03-16T14:13:15. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -253,7 +253,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/home/topor/Documents/Mesteri/Aarhus/In-Uni/4.sem/extended_mean_shifting_3d_edge_bundling/fibviewer/fibviewer.pro</value>
     <value type="bool" key="ProjectExplorer.RunConfiguration.Customized">true</value>
-    <value type="QString" key="RunConfiguration.Arguments">/home/topor/Documents/Mesteri/Aarhus/In-Uni/4.sem/extended_mean_shifting_3d_edge_bundling/outputs/binary_VTK.fib</value>
+    <value type="QString" key="RunConfiguration.Arguments">/home/topor/Documents/Mesteri/Aarhus/In-Uni/4.sem/extended_mean_shifting_3d_edge_bundling/outputs/demo_micha.vtk</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
     <value type="QString" key="RunConfiguration.WorkingDirectory.default">/home/topor/Documents/Mesteri/Aarhus/In-Uni/4.sem/extended_mean_shifting_3d_edge_bundling/fibviewer/build/Desktop-Debug</value>

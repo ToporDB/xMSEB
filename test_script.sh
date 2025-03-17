@@ -2,7 +2,7 @@
 
 # Check if at least one argument is provided
 if [ "$#" -lt 1 ]; then
-    echo "Usage: $0 (<fib-file> | <nodes> <connections> <output-filename>) [c_thr] [start_i] [numcycles]"
+    echo "Usage: $0 (<fib-file> | <nodes> <connections> <output-filename>) [c_thr] [start_i] [numcycles] [bell]"
     exit 1
 fi
 
@@ -10,6 +10,7 @@ fi
 C_THR="${4:-0.9}"
 START_I="${5:-10}"
 NUMCYCLES="${6:-10}"
+BELL="${7:-5}"
 
 # Define paths
 BUNDLER="./bundler/build/Desktop-Debug/bundler"
