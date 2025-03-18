@@ -194,7 +194,7 @@ void Connections::attract(){
 //                    qDebug() << weightOfTheComparedEdge;
                     float de = (pe-p).length();
 
-                    double weight =  qExp(-(de*de)/(2*bell*bell)) * weightOfTheComparedEdge; // * c * c;
+                    double weight =  qExp(-(de*de)/(2*bell*bell)) / weightOfTheComparedEdge; // * c * c;
 
                     fsum += weight;
                     f += weight * pe;
