@@ -154,6 +154,7 @@ void Connections::params() {
     numcycles = 10;
     bell = 5;
     smooth = 3;
+    beta = 0.1;
 }
 
 void Connections::subdivide(int newp) {
@@ -204,7 +205,10 @@ void Connections::attract(){
 
             f /= fsum;
             QVector3D force = edgeDepthFactor * edgeDepthFactor * (f-p)/(weightOfThisEdge);
-//            QVector3D force = (f-p)/(weightOfThisEdge);
+
+            // Adding momentum, aka, let the previous force determine the next one
+            force += beta * e->forces.at(i);
+
             e->forces.replace(i,force);
         }
     }
