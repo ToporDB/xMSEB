@@ -4,3 +4,5 @@ fibviewer.pro.user
 /outputs
 subtract_1.py
 .vscode
+.venv
+/inputs
