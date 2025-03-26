@@ -148,6 +148,17 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
     glGetFloatv(GL_MODELVIEW_MATRIX, view);
     glPopMatrix();
 
+    // Extract world-space camera position using matrix inversion
+    QMatrix4x4 viewMatrix(view[0], view[4], view[8], view[12],
+                          view[1], view[5], view[9], view[13],
+                          view[2], view[6], view[10], view[14],
+                          view[3], view[7], view[11], view[15]);
+
+    // **Inverse of the view matrix gives us the camera position in world space**
+    QMatrix4x4 invView = viewMatrix.inverted();
+    QVector3D cameraPosition = invView.map(QVector3D(0, 0, 0));  // **Corrected Extraction**
+
+    emit cameraUpdated(cameraPosition);
     updateGL();
 }
 
@@ -161,6 +172,9 @@ void GLWidget::wheelEvent (QWheelEvent *event)
     int d = event->delta();
     qDebug() << "scale" << scale;
     scale *= 1.0-d/1200.0;
+
+    emit cameraUpdatedZoom(scale);
+
     updateGL();
 }
 

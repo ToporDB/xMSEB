@@ -6,15 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1090</width>
-    <height>661</height>
+    <width>1094</width>
+    <height>651</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,10,0">
+    <property name="leftMargin">
+     <number>9</number>
+    </property>
     <item>
      <widget class="QSlider" name="verticalSlider">
       <property name="sliderPosition">
@@ -26,7 +29,96 @@
      </widget>
     </item>
     <item>
-     <widget class="GLWidget" name="widget" native="true"/>
+     <widget class="GLWidget" name="widget" native="true">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetDefaultConstraint</enum>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <layout class="QHBoxLayout" name="xHorizontalLayout">
+        <item>
+         <widget class="QLabel" name="xLabel">
+          <property name="text">
+           <string>X:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="xValue">
+          <property name="text">
+           <string>0.1</string>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="yHorizontalLayout">
+        <item>
+         <widget class="QLabel" name="yLabel">
+          <property name="text">
+           <string>Y:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="yValue">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="zHorizontalLayout">
+        <item>
+         <widget class="QLabel" name="zLabel">
+          <property name="text">
+           <string>Z:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="zValue">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="zoomHorizontalLayout">
+        <item>
+         <widget class="QLabel" name="zoomlabel">
+          <property name="text">
+           <string>Zoom:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="zoomValue">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
@@ -58,8 +150,8 @@
    <slot>stuffSliderChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>24</x>
-     <y>198</y>
+     <x>23</x>
+     <y>207</y>
     </hint>
     <hint type="destinationlabel">
      <x>145</x>

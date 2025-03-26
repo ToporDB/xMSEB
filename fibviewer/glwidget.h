@@ -51,7 +51,9 @@ class GLWidget : public QGLWidget
 public:
     GLWidget(QWidget *parent = 0);
     ~GLWidget();
-
+signals:
+    void cameraUpdated(const QVector3D& position);  // Signal for position & zoom
+    void cameraUpdatedZoom(double zoom);
 protected:
     QString arg(QString argname);
     void initializeGL();

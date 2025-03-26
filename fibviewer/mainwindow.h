@@ -15,6 +15,10 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+private slots:
+    void updateCameraValues(const QVector3D& position);
+    void updateCameraZoom(double zoom);
+
 private:
     Ui::MainWindow *ui;
 };
