@@ -53,21 +53,31 @@ Connections::Connections(QString nname, QString ename, QString fileName)
             continue;
         }
 
-        int f = evals.at(0).toInt();
-        int t = evals.at(1).toInt();
+        int from = evals.at(0).toInt();
+        int to = evals.at(1).toInt();
 
-        // Check if weight is given; otherwise, set to 1.0
-        QString weight = (evals.size() > 2) ? evals.at(2) : "1.0";
+        const double defaultWeight = 1.0;
+        double weight = (evals.size() > 2) ? evals.at(2).toDouble() : defaultWeight;
 
         // Check if start and end clusters are given; otherwise, set to "dummy"
         QString startCluster = (evals.size() > 3) ? evals.at(3) : "dummy";
         QString endCluster = (evals.size() > 4) ? evals.at(4) : "dummy";
 
+        // Negative weights
+        if (weight < 0.0) {
+            std::swap(from, to);
+            std::swap(startCluster, endCluster);
+            weight = std::abs(weight);
+        }
+
+        // Adding 1 so we don't divide with number between (0, 1)
+        weight += 1.0;
+
         try {
-            Edge* aedge = new Edge(nodes.at(f), nodes.at(t), weight, startCluster, endCluster);
+            Edge* aedge = new Edge(nodes.at(from), nodes.at(to), QString::number(weight), startCluster, endCluster);
             edges << aedge;
         } catch (QException& e) {
-            qDebug() << "Out of bounds error for nodes:" << f << t;
+            qDebug() << "Out of bounds error for nodes:" << from << to;
         }
     }
     e.close();
@@ -321,11 +331,11 @@ void Connections::writeVTK(){
         Edge* ed = edges.at(e);
         for (int p=0; p<ed->points.size(); p++){
             QVector3D po = ed->points.at(p);
-            double weight = ed->wt.toDouble();
-            QString startCluster = ed->startCluster;
-            QString endCluster = ed->endCluster;
+            // double weight = ed->wt.toDouble();
+            // QString startCluster = ed->startCluster;
+            // QString endCluster = ed->endCluster;
             out.setRealNumberPrecision(10);
-            out << (float)po.x() << " " << (float)po.y()  << " " << (float)po.z() << " " << weight << " " << startCluster << " " << endCluster << Qt::endl;
+            out << (float)po.x() << " " << (float)po.y()  << " " << (float)po.z() << Qt::endl; // << " " << weight << " " << startCluster << " " << endCluster << Qt::endl;
         }
     }
 

@@ -36,7 +36,10 @@
      </widget>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0">
+     <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0">
+      <property name="spacing">
+       <number>0</number>
+      </property>
       <property name="sizeConstraint">
        <enum>QLayout::SetDefaultConstraint</enum>
       </property>
@@ -44,57 +47,27 @@
        <number>0</number>
       </property>
       <item>
-       <layout class="QHBoxLayout" name="xHorizontalLayout">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="1,2">
+        <property name="spacing">
+         <number>0</number>
+        </property>
         <item>
-         <widget class="QLabel" name="xLabel">
-          <property name="text">
-           <string>X:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="xValue">
-          <property name="text">
-           <string>0.1</string>
-          </property>
-          <property name="readOnly">
+         <widget class="QLabel" name="matrixLabel">
+          <property name="enabled">
            <bool>true</bool>
           </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="yHorizontalLayout">
-        <item>
-         <widget class="QLabel" name="yLabel">
           <property name="text">
-           <string>Y:</string>
+           <string>View:</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="yValue">
-          <property name="readOnly">
+         <widget class="QTextEdit" name="matrixValue">
+          <property name="autoFillBackground">
            <bool>true</bool>
           </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="zHorizontalLayout">
-        <item>
-         <widget class="QLabel" name="zLabel">
-          <property name="text">
-           <string>Z:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="zValue">
-          <property name="readOnly">
-           <bool>true</bool>
+          <property name="acceptRichText">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -112,7 +85,7 @@
         <item>
          <widget class="QLineEdit" name="zoomValue">
           <property name="readOnly">
-           <bool>true</bool>
+           <bool>false</bool>
           </property>
          </widget>
         </item>

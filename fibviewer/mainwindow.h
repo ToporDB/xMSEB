@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QGLWidget>
 
 namespace Ui {
     class MainWindow;
@@ -16,11 +17,14 @@ public:
     ~MainWindow();
 
 private slots:
-    void updateCameraValues(const QVector3D& position);
+    void updateCameraValues(GLfloat* position);
     void updateCameraZoom(double zoom);
+    void onMatrixValueChanged();
+    void onZoomValueChanged();
 
 private:
     Ui::MainWindow *ui;
+    bool setMatrixFromUI(GLfloat* matrix);
 };
 
 #endif // MAINWINDOW_H

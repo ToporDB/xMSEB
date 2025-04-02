@@ -52,7 +52,7 @@ public:
     GLWidget(QWidget *parent = 0);
     ~GLWidget();
 signals:
-    void cameraUpdated(const QVector3D& position);  // Signal for position & zoom
+    void cameraUpdated(GLfloat* position);  // Signal for position & zoom
     void cameraUpdatedZoom(double zoom);
 protected:
     QString arg(QString argname);
@@ -77,6 +77,8 @@ public slots:
     void save();
     void screenshot(QString name);
     void stuffSliderChanged(int i);
+    void updateViewMatrix(GLfloat* matrix);
+    void setZoomLevel(double value);
 };
 
 #endif

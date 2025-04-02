@@ -214,10 +214,10 @@ def visualize_voxel_grid(nodes, edges, voxel_indices, voxel_size, min_coords):
 
 if __name__ == "__main__":
     # Load VTK file
-    VTK_FILE = "test.vtk"
+    VTK_FILE = "test_cleaned.vtk"
     _, nodes, edges, _ = read_vtk_ascii(VTK_FILE)
 
-    NUM_VOXELS = 10
+    NUM_VOXELS = 50
 
     # Get voxel grid parameters
     min_coords, max_coords = get_bounding_box(nodes)
@@ -228,7 +228,7 @@ if __name__ == "__main__":
     voxel_indices = map_nodes_to_voxels(nodes, min_coords, voxel_size)
 
     # Visualize in 3D
-    # visualize_voxel_grid(nodes, edges, voxel_indices, voxel_size, min_coords)
+    visualize_voxel_grid(nodes, edges, voxel_indices, voxel_size, min_coords)
     metrics = compute_metrics(
         nodes,
         edges,
