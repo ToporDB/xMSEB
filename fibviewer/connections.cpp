@@ -80,11 +80,13 @@ Connections::Connections(QString fib) {
             qDebug() << "Detected ASCII format";
             n.seek(0);
             readAscii(n);
+            break;
         }
         if (nl.startsWith("BINARY")) {
             qDebug() << "Detected Binary format";
             n.seek(0);
             readBinary(n);
+            break;
         }
     }
 
@@ -212,6 +214,11 @@ void Connections::createPrims(){
 }
 
 void Connections::calculateBounds() {
+    if (edges.size() == 1) {
+        piv = QVector3D(edges.at(0)->fn.x() + 2.0f, edges.at(0)->fn.y() + 2.0f, edges.at(0)->fn.z() + 2.0f);
+        return;
+    }
+
     for (int i = 0; i < edges.size(); i++) {
         Edge *aedge = edges.at(i);
         QVector3D afn = aedge->fn;

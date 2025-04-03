@@ -1,6 +1,21 @@
 #include "edge.h"
 
+#include <QtMath>
 #include <QtDebug>
+#include <QRandomGenerator>
+
+float getRandomFloat(float max) {
+    return QRandomGenerator::global()->bounded(double(max));
+}
+
+QVector3D getRandomUnitVector() {
+    float theta = getRandomFloat(2 * M_PI);
+    float phi = getRandomFloat(M_PI);
+    float x = qCos(theta) * qSin(phi);
+    float y = qSin(theta) * qSin(phi);
+    float z = qCos(phi);
+    return QVector3D(x, y, z).normalized();
+}
 
 Edge::Edge(QVector3D fn, QVector3D tn, QString wt, QString startCluster, QString endCluster)
 {
@@ -9,9 +24,25 @@ Edge::Edge(QVector3D fn, QVector3D tn, QString wt, QString startCluster, QString
     this->wt = wt; //weight parameter
     this->startCluster = startCluster;
     this->endCluster = endCluster;
-    points << fn << tn;
+
     QVector3D nv(0,0,0);
-    forces << nv << nv;
+    // For self loops, add already two points randomly
+    if (fn == tn) {
+        // select a random point in a sphere, where the center of the sphere is the node
+        points << fn << QVector3D(
+            fn.x() + getRandomFloat(5.0f) + 1.0f,
+            fn.y() + getRandomFloat(5.0f) + 1.0f,
+            fn.z() + getRandomFloat(5.0f) + 1.0f
+            ) << QVector3D(
+                      fn.x() + getRandomFloat(5.0f) + 1.0f,
+                      fn.y() + getRandomFloat(5.0f) + 1.0f,
+                      fn.z() + getRandomFloat(5.0f) + 1.0f
+                      ) << tn;
+        forces << nv << nv << nv << nv;
+    } else {
+        points << fn << tn;
+        forces << nv << nv;
+    }
 }
 
 void Edge::subdivide(int newp){
