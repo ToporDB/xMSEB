@@ -34,7 +34,6 @@ Connections::Connections(QString nname, QString ename)
     }
     n.close();
     qDebug() << "nodes read";
-    calculateBounds();
 
     QFile e(ename);
     if (!e.open(QIODevice::ReadOnly)) qDebug("edges unreadable");
@@ -58,9 +57,7 @@ Connections::Connections(QString nname, QString ename)
     qDebug() << edges.length() << " edges...";
 
     calculateBounds();
-
     createPrims();
-
 }
 
 Connections::Connections(QString fib) {
@@ -254,6 +251,12 @@ void Connections::paintPoints(){
     glBegin(GL_POINTS);
     for (int i = 0; i < nodes.size(); i++){
         QVector3D n = nodes.at(i);
+        // if (i == 0 or i == nodes.size() - 1) {
+        //     glPointSize(50.0);
+        // }
+        // else {
+        //     glPointSize(50.0);
+        // }
         glVertex3f(n.x(),n.y(),n.z());
     }
     glEnd();
