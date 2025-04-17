@@ -105,7 +105,11 @@ void GLWidget::paintGL()
     glEnable(GL_DEPTH_TEST);
 
     glColor4f(1,0,0,stuffAlpha);
-    cons->paintGL();
+
+    for (auto edge : cons->edges) {
+        edge->paintGL(intermediateNodes, startAndEndNodes);
+    }
+
 }
 
 void GLWidget::resizeGL(int width, int height)
@@ -195,6 +199,10 @@ void GLWidget::keyPressEvent(QKeyEvent *event) {
     }
     if (event->key() == Qt::Key_1) p1 = !p1;
     if (event->key() == Qt::Key_2) p2 = !p2;
+
+    if (event->key() == Qt::Key_S) startAndEndNodes = !startAndEndNodes;
+    if (event->key() == Qt::Key_I) intermediateNodes = !intermediateNodes;
+
     updateGL();
 }
 

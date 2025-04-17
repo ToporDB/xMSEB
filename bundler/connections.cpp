@@ -268,6 +268,16 @@ void Connections::calcComps(){
             } else {
                 Edge* ei = edges.at(i);
                 Edge* ej = edges.at(j);
+
+                // Directionality: We don't want to bundle edges that point in the other directions
+                // TODO: Test it and see if it works (I don't think so)
+                if ((ei->fn == ej->tn && ei->tn == ej->fn)
+                    || (ei->startCluster == ej->endCluster && ei->endCluster == ej->startCluster && ei->startCluster != ei->endCluster)
+                    || (ei->fn == ej->fn && ei->tn == ej->tn && ei->startCluster != ej->startCluster && ei->endCluster != ej->endCluster)) { // More edge types supported
+                    comps[i+edges.size()*j] = 0;
+                    continue;
+                }
+
                 //calculate compatibility btw. edge i and j
                 //angle
                 double angle_comp;

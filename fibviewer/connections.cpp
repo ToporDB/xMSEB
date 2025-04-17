@@ -247,30 +247,29 @@ bool primLTprim(const Primitive* p1, const Primitive* p2) {
 }
 
 void Connections::paintPoints(){
-    glPointSize(5.0);
-    glBegin(GL_POINTS);
-    for (int i = 0; i < nodes.size(); i++){
-        QVector3D n = nodes.at(i);
-        // if (i == 0 or i == nodes.size() - 1) {
-        //     glPointSize(50.0);
-        // }
-        // else {
-        //     glPointSize(50.0);
-        // }
-        glVertex3f(n.x(),n.y(),n.z());
-    }
-    glEnd();
-}
+    // if (nodes.isEmpty()) return;
 
-void Connections::paintGL()
-{
-    glLineWidth(1);
-    for (int i = 0; i < prims.length(); i++){
-        Primitive* p = prims.at(i);
-        p->paintGL();
-    }
-    paintPoints();
-    glDisable(GL_DEPTH_TEST);
+    // // Draw first node (index 0): black, size 10
+    // glColor3f(0.0f, 0.0f, 0.0f); // Black
+    // glPointSize(10.0f);
+    // glBegin(GL_POINTS);
+    // QVector3D node = nodes.first();
+    // glVertex3f(node.x(), node.y(), node.z());
+    // node = nodes.last();
+    // glVertex3f(node.x(), node.y(), node.z());
+    // glEnd();
+
+    // // Draw middle nodes: red, size 5
+    // if (nodes.size() > 2) {
+    //     glColor3f(1.0f, 0.0f, 0.0f); // Red
+    //     glPointSize(5.0f);
+    //     glBegin(GL_POINTS);
+    //     for (int i = 1; i < nodes.size() - 1; ++i) {
+    //         QVector3D n = nodes.at(i);
+    //         glVertex3f(n.x(), n.y(), n.z());
+    //     }
+    //     glEnd();
+    // }
 }
 
 void Connections::sortCons(){

@@ -72,7 +72,8 @@ private:
     float stuffAlpha;
     double scale;
     float bg;
-    bool p1,p2;
+    bool p1, p2;
+    bool intermediateNodes = false, startAndEndNodes = true;
 public slots:
     void save();
     void screenshot(QString name);
