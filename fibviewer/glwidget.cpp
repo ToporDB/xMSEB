@@ -104,10 +104,8 @@ void GLWidget::paintGL()
 
     glEnable(GL_DEPTH_TEST);
 
-    glColor4f(1,0,0,stuffAlpha);
-
-    for (auto edge : cons->edges) {
-        edge->paintGL(intermediateNodes, startAndEndNodes);
+    for (int i = 0; i < cons->edges.size(); ++i) {
+        cons->edges[i]->paintGL(intermediateNodes, startAndEndNodes, stuffAlpha);
     }
 
 }

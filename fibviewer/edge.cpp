@@ -9,21 +9,19 @@ Edge::Edge(QVector3D fn, QVector3D tn)
     points << fn << tn;
 }
 
-void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes) {
-
+void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha) {
     if (startAndEndNodes) {
         glPointSize(10);
-        glColor3f(0.0,0.0,0.0);
+        glColor4f(0.0,0.0,0.0, alpha);
         glBegin(GL_POINTS);
         glVertex(fn);
         glVertex(tn);
         glEnd();
-
-        glColor4f(0.5,0.0,0.0,1);
-        glLineWidth(1);
-        glPointSize(3);
     }
 
+    glColor4f(0.5,0.0,0.0,alpha);
+    glLineWidth(1);
+    glPointSize(3);
     for (int i=0; i<points.length()-1; i++){
         QVector3D p1 = points.at(i);
         QVector3D p2 = points.at(i+1);
