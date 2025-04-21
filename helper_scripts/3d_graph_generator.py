@@ -4,7 +4,7 @@ import random
 num_clusters = 2
 nodes_per_cluster = 10  # Nodes per cluster
 inter_cluster_edges = 40  # Random edges between clusters
-space_size = 100         # Space range for clusters
+space_size = 100  # Space range for clusters
 edge_weight_range = (1, 3)
 spaceness = 5
 
@@ -16,11 +16,13 @@ cluster_centers = []
 
 # Generate cluster centers
 for _ in range(num_clusters):
-    cluster_centers.append((
-        random.uniform(-space_size, space_size),
-        random.uniform(-space_size, space_size),
-        random.uniform(-space_size, space_size)
-    ))
+    cluster_centers.append(
+        (
+            random.uniform(-space_size, space_size),
+            random.uniform(-space_size, space_size),
+            random.uniform(-space_size, space_size),
+        )
+    )
 
 # Generate nodes
 cluster_nodes = []  # Store node indices for each cluster
@@ -52,12 +54,18 @@ for _ in range(inter_cluster_edges * num_clusters):
     edges.append((n1, n2, weight))
 
 # Write nodes to file
-with open(f"nodes_nrclts={num_clusters}_npcltrs{nodes_per_cluster}_edgesprct={inter_cluster_edges}.txt", "w") as f:
+with open(
+    f"nodes_nrclts={num_clusters}_npcltrs{nodes_per_cluster}_edgesprct={inter_cluster_edges}.txt",
+    "w",
+) as f:
     for node in nodes:
         f.write(f"{node[0]} {node[1]} {node[2]}\n")
 
 # Write edges to file
-with open(f"edges_nrclts={num_clusters}_npcltrs{nodes_per_cluster}_edgesprct={inter_cluster_edges}.txt", "w") as f:
+with open(
+    f"edges_nrclts={num_clusters}_npcltrs{nodes_per_cluster}_edgesprct={inter_cluster_edges}.txt",
+    "w",
+) as f:
     for edge in edges:
         f.write(f"{edge[0]} {edge[1]} {edge[2]}\n")
 

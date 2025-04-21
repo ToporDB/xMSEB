@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 
 
@@ -76,7 +77,13 @@ def process_vtk_ascii(input_filename, output_filename):
     print(f"Processed VTK saved as: {output_filename}")
 
 
+# Check if a filename was provided
+if len(sys.argv) < 2:
+    print("Usage: python script.py <filename>")
+    sys.exit(1)
+
+# Load VTK file
+input_vtk_file = sys.argv[1]
 # Example usage:
-input_vtk_file = "test.vtk"
-output_vtk_file = "test_cleaned.vtk"
+output_vtk_file = input_vtk_file.split(".")[0] + "_cleaned.vtk"
 process_vtk_ascii(input_vtk_file, output_vtk_file)

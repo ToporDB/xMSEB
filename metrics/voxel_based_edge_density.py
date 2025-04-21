@@ -1,5 +1,7 @@
 import os
+import sys
 import numpy as np
+from collections import defaultdict
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import matplotlib.colors as mcolors
@@ -44,6 +46,74 @@ def read_vtk_ascii(filename):
     return header, points, edges, lines[edges_start:] if edges_start else []
 
 
+def bresenham_3d(start, end):
+    """Generates all voxels along a 3D line from start to end using Bresenham's algorithm."""
+    x1, y1, z1 = map(int, start)
+    x2, y2, z2 = map(int, end)
+
+    voxels = []
+
+    dx = abs(x2 - x1)
+    dy = abs(y2 - y1)
+    dz = abs(z2 - z1)
+
+    xs = 1 if x2 > x1 else -1
+    ys = 1 if y2 > y1 else -1
+    zs = 1 if z2 > z1 else -1
+
+    x, y, z = x1, y1, z1
+
+    # Driving axis is X-axis
+    if dx >= dy and dx >= dz:
+        p1 = 2 * dy - dx
+        p2 = 2 * dz - dx
+        for _ in range(dx + 1):
+            voxels.append((x, y, z))
+            if p1 >= 0:
+                y += ys
+                p1 -= 2 * dx
+            if p2 >= 0:
+                z += zs
+                p2 -= 2 * dx
+            p1 += 2 * dy
+            p2 += 2 * dz
+            x += xs
+
+    # Driving axis is Y-axis
+    elif dy >= dx and dy >= dz:
+        p1 = 2 * dx - dy
+        p2 = 2 * dz - dy
+        for _ in range(dy + 1):
+            voxels.append((x, y, z))
+            if p1 >= 0:
+                x += xs
+                p1 -= 2 * dy
+            if p2 >= 0:
+                z += zs
+                p2 -= 2 * dy
+            p1 += 2 * dx
+            p2 += 2 * dz
+            y += ys
+
+    # Driving axis is Z-axis
+    else:
+        p1 = 2 * dy - dz
+        p2 = 2 * dx - dz
+        for _ in range(dz + 1):
+            voxels.append((x, y, z))
+            if p1 >= 0:
+                y += ys
+                p1 -= 2 * dz
+            if p2 >= 0:
+                x += xs
+                p2 -= 2 * dz
+            p1 += 2 * dy
+            p2 += 2 * dx
+            z += zs
+
+    return voxels
+
+
 def get_bounding_box(nodes):
     """Finds the bounding box that contains all the nodes."""
     min_coords = np.min(nodes, axis=0)
@@ -67,17 +137,20 @@ def map_nodes_to_voxels(nodes, min_coords, voxel_size):
 
 
 def map_edges_to_voxels(nodes, edges, voxel_indices):
-    """Maps edges to voxels and returns a dictionary of voxel-edge mappings."""
+    """Maps edges to voxels, including all intermediate voxels along the edge path."""
     voxel_edges = {}
 
-    for edge in edges:
-        for i in range(1, len(edge)):  # Iterate over each edge segment
+    for j, edge in enumerate(edges):
+        visited_voxels = set()
+        for i in range(1, len(edge)):
             start_voxel = tuple(voxel_indices[edge[i - 1]])
             end_voxel = tuple(voxel_indices[edge[i]])
+            traversed_voxels = bresenham_3d(start_voxel, end_voxel)
 
-            # Track both start and end voxel
-            voxel_edges.setdefault(start_voxel, []).append(edge)
-            voxel_edges.setdefault(end_voxel, []).append(edge)
+            for voxel in traversed_voxels:
+                if (voxel, j) not in visited_voxels:
+                    voxel_edges.setdefault(voxel, set()).add(j)
+                    visited_voxels.add((voxel, j))
 
     return voxel_edges
 
@@ -90,10 +163,36 @@ def compute_overplotted_percentage(voxel_edges):
     return 100 * len(overplotted_voxels) / len(used_voxels) if used_voxels else 0
 
 
-def compute_overcrowded_percentage(voxel_edges, total_edges):
-    """Computes the percentage of edges that are bundled (multiple edges in the same voxel)."""
-    bundled_edges = sum(len(es) - 1 for es in voxel_edges.values() if len(es) > 1)
-    return 100 * bundled_edges / total_edges if total_edges else 0
+def compute_overcrowded_percentage(
+    edges, total_edges, nodes: list[list[float, float, float]]
+):
+    """Computes the percentage of edges that are bundled — i.e., share at least one intermediate node with another edge."""
+
+    point_to_edges = defaultdict(set)
+
+    # Step 1: Build map of interior (non-endpoint) points to edges
+    for edge_idx, edge in enumerate(edges):
+        if len(edge) <= 2:
+            continue  # no interior points to consider
+
+        for node_idx in edge[1:-1]:  # skip first and last
+            point = tuple(nodes[node_idx])
+            point_to_edges[point].add(edge_idx)
+
+    # Step 2: Check for bundling based on shared interior points
+    bundled_edges = set()
+
+    for edge_idx, edge in enumerate(edges):
+        if len(edge) <= 2:
+            continue
+
+        for node_idx in edge[1:-1]:
+            point = tuple(nodes[node_idx])
+            if len(point_to_edges[point]) > 1:
+                bundled_edges.add(edge_idx)
+                break  # one shared point is enough to count as bundled
+
+    return 100 * len(bundled_edges) / total_edges if total_edges else 0
 
 
 def compute_ink_paper_ratio(voxel_edges, num_voxels):
@@ -113,7 +212,7 @@ def compute_metrics(
 
     # Step 2: Compute metrics
     overplotted_percent = compute_overplotted_percentage(voxel_edges)
-    overcrowded_percent = compute_overcrowded_percentage(voxel_edges, len(edges))
+    overcrowded_percent = compute_overcrowded_percentage(edges, len(edges), nodes)
     ink_paper_ratio = compute_ink_paper_ratio(voxel_edges, num_voxels)
 
     return {
@@ -165,45 +264,56 @@ def get_voxel_faces(x, y, z, size):
     ]
 
 
-def visualize_voxel_grid(nodes, edges, voxel_indices, voxel_size, min_coords):
-    """Plots the voxel grid and nodes in 3D with correct voxel placement."""
-    fig = plt.figure(figsize=(10, 10))
-    ax = fig.add_subplot(111, projection="3d")
-
-    # Plot nodes
-    ax.scatter(
-        nodes[:, 0], nodes[:, 1], nodes[:, 2], c="blue", marker="o", label="Nodes"
-    )
-
-    # Generate colors for voxels
+def plot_voxels(ax, voxel_indices, voxel_size, min_coords, color_map=None, alpha=0.3):
+    """Plots voxels from a list of indices."""
     unique_voxels = np.unique(voxel_indices, axis=0)
-    colors = list(mcolors.TABLEAU_COLORS.values())  # Get distinct colors
-    color_map = {
-        tuple(voxel): colors[i % len(colors)] for i, voxel in enumerate(unique_voxels)
-    }
 
-    # Draw voxel grid with correct placement
+    if color_map is None:
+        colors = list(mcolors.TABLEAU_COLORS.values())
+        color_map = {
+            tuple(voxel): colors[i % len(colors)]
+            for i, voxel in enumerate(unique_voxels)
+        }
+
     for voxel in unique_voxels:
-        voxel_corner = (
-            min_coords + voxel * voxel_size
-        )  # Calculate exact voxel corner position
+        voxel_corner = min_coords + voxel * voxel_size
         x, y, z = voxel_corner
         size = voxel_size[0]  # Assuming cubic voxels
 
         faces = get_voxel_faces(x, y, z, size)
-        color = color_map[tuple(voxel)]
         voxel_poly = Poly3DCollection(
-            faces, alpha=0.3, linewidths=0.3, edgecolors="black"
+            faces, alpha=alpha, linewidths=0.3, edgecolors="black"
         )
-        voxel_poly.set_facecolor(color)
+        voxel_poly.set_facecolor(color_map[tuple(voxel)])
         ax.add_collection3d(voxel_poly)
 
-    # Plot edges
+
+def plot_nodes(ax, nodes, color="blue", label="Nodes"):
+    """Plots nodes as 3D scatter."""
+    ax.scatter(nodes[:, 0], nodes[:, 1], nodes[:, 2], c=color, marker="o", label=label)
+
+
+def plot_edges(ax, nodes, edges, color="black", alpha=0.5):
+    """Plots edges between nodes."""
     for edge in edges:
         edge_nodes = nodes[edge]
         ax.plot(
-            edge_nodes[:, 0], edge_nodes[:, 1], edge_nodes[:, 2], c="black", alpha=0.5
+            edge_nodes[:, 0], edge_nodes[:, 1], edge_nodes[:, 2], c=color, alpha=alpha
         )
+
+
+def visualize_voxel_grid(
+    nodes, edges, voxel_indices, voxel_size, min_coords, show_edges=True
+):
+    """Main visualization wrapper."""
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(111, projection="3d")
+
+    plot_nodes(ax, nodes)
+    plot_voxels(ax, voxel_indices, voxel_size, min_coords)
+
+    if show_edges:
+        plot_edges(ax, nodes, edges)
 
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
@@ -213,11 +323,16 @@ def visualize_voxel_grid(nodes, edges, voxel_indices, voxel_size, min_coords):
 
 
 if __name__ == "__main__":
+    # Check if a filename was provided
+    if len(sys.argv) < 2:
+        print("Usage: python script.py <filename>")
+        sys.exit(1)
+
     # Load VTK file
-    VTK_FILE = "test_cleaned.vtk"
+    VTK_FILE = sys.argv[1]
     _, nodes, edges, _ = read_vtk_ascii(VTK_FILE)
 
-    NUM_VOXELS = 50
+    NUM_VOXELS = 100
 
     # Get voxel grid parameters
     min_coords, max_coords = get_bounding_box(nodes)
@@ -228,7 +343,7 @@ if __name__ == "__main__":
     voxel_indices = map_nodes_to_voxels(nodes, min_coords, voxel_size)
 
     # Visualize in 3D
-    visualize_voxel_grid(nodes, edges, voxel_indices, voxel_size, min_coords)
+    # visualize_voxel_grid(nodes, edges, voxel_indices, voxel_size, min_coords)
     metrics = compute_metrics(
         nodes,
         edges,
