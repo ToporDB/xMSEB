@@ -1,6 +1,5 @@
 **/build
-.pro.user
-fibviewer.pro.user
+**/*.pro.user
 /outputs
 subtract_1.py
 .vscode
