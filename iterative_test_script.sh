@@ -1,93 +1,113 @@
 #!/bin/bash
 
+# Paths
+BUNDLER="./bundler/build/Desktop-Debug/bundler"
+FIBVIEWER="./fibviewer/build/Desktop-Debug/fibviewer"
+BUNDLER_OUTPUT_DIR="./"
+SCREENSHOT_DIR="./outputs/screenshots"
+TMP_VTK_DIR="./outputs/tmp_vtks"
+FINAL_OUTPUT_DIR="./outputs/final"
+PYTHON_SCRIPT="./make_gif_or_slider.py"
+
+# Clean previous screenshots
+rm -rf "$SCREENSHOT_DIR"
+rm -rf "$TMP_VTK_DIR"
+mkdir -p "$SCREENSHOT_DIR"
+mkdir -p "$FINAL_OUTPUT_DIR"
+mkdir -p "$TMP_VTK_DIR"
+
+# Run bundler
+echo "Running bundler..."
+
 # Check if at least one argument is provided
 if [ "$#" -lt 1 ]; then
     echo "Usage: $0 (<fib-file> | <nodes> <connections> <output-filename>) [c_thr] [start_i] [numcycles] [bell]"
     exit 1
 fi
 
-# Assign parameters with defaults (upper bounds for start_i and numcycles)
+# Assign parameters with defaults
 C_THR="${4:-0.9}"
-MAX_START_I="${5:-10}"     # Upper bound for start_i
-MAX_NUMCYCLES="${6:-10}"   # Upper bound for numcycles
+START_I="${5:-10}"
+NUMCYCLES="${6:-10}"
 BELL="${7:-5}"
 
-# Define paths
-BUNDLER="./bundler/build/Desktop-Debug/bundler"
-FIBVIEWER="./fibviewer/build/Desktop-Debug/fibviewer"
-OUTPUT_DIR="./outputs"
-
 # Ensure binaries are executable
-chmod +x "$BUNDLER" 2>/dev/null
-chmod +x "$FIBVIEWER" 2>/dev/null
+if [[ ! -x "$BUNDLER" ]]; then
+    chmod +x "$BUNDLER"
+fi
+
+if [[ ! -x "$FIBVIEWER" ]]; then
+    chmod +x "$FIBVIEWER"
+fi
 
 # Ensure output directory exists
 mkdir -p "$OUTPUT_DIR"
 
-# Initialize counters
-current_start_i=1
-current_numcycles=1
-
-# Function to run Bundler and FibViewer
-run_processing() {
-    local start_i=$1
-    local numcycles=$2
-
-    if [[ "$FIB_FILE" ]]; then
-        echo "Running Bundler with: -fib $FIB_FILE -c_thr $C_THR -start_i $start_i -numcycles $numcycles"
-        "$BUNDLER" -fib "$FIB_FILE" -c_thr "$C_THR" -start_i "$start_i" -numcycles "$numcycles" &
-        local output_file="${FIB_FILE}.vtk"
-    else
-        echo "Running Bundler with: -nodes $NODES -cons $CONNECTIONS -fileName $OUTPUT_FILENAME -c_thr $C_THR -start_i $start_i -numcycles $numcycles"
-        "$BUNDLER" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$start_i" -numcycles "$numcycles" &
-        local output_file="${OUTPUT_FILENAME}.vtk"
-    fi
-
-    # Wait for Bundler to finish
-    wait
-
-    # Check if output file exists
-    if [[ -f "$output_file" ]]; then
-        mv "$output_file" "$OUTPUT_DIR/"
-        echo "Moved output file to $OUTPUT_DIR/$output_file"
-
-        # Run FibViewer in the background
-        echo "Running FibViewer with: $OUTPUT_DIR/$output_file"
-        "$FIBVIEWER" "$OUTPUT_DIR/$output_file" &
-    else
-        echo "Error: Expected output file '$output_file' not found!"
-    fi
-}
-
 # Determine whether to use -fib OR -nodes & -cons
 if [[ "$1" == *.fib ]]; then
+    # Case: Using a .fib file
     FIB_FILE="$1"
+    echo "Running Bundler with: -fib $FIB_FILE -c_thr $C_THR -start_i $START_I -numcycles $NUMCYCLES"
+    "$BUNDLER" -fib "$FIB_FILE" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES"
+
+    # Move and run FibViewer on the output file
+    FIB_TXT_FILE="${FIB_FILE}.vtk"
 else
+    # Case: Using -nodes and -cons
     if [ "$#" -lt 3 ]; then
         echo "Error: If using -nodes, you must provide <nodes> <connections> and <output-filename>!"
         exit 1
     fi
+
     NODES="$1"
     CONNECTIONS="$2"
     OUTPUT_FILENAME="$3"
+
+    echo "Running Bundler with: -nodes $NODES -cons $CONNECTIONS -fileName $OUTPUT_FILENAME -c_thr $C_THR -start_i $START_I -numcycles $NUMCYCLES"
+    "$BUNDLER" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES"
+
+    # Move and run FibViewer on the output file
+    FIB_TXT_FILE="${OUTPUT_FILENAME}.vtk"
 fi
 
-# Loop to execute in parallel with cycling start_i and increasing numcycles
-while [[ $current_numcycles -le $MAX_NUMCYCLES ]]; do
-    run_processing "$current_start_i" "$current_numcycles"
+# Find all VTK files generated that match the OUTPUT_FILENAME prefix
+vtk_files=$(find "$BUNDLER_OUTPUT_DIR" -name "$OUTPUT_FILENAME*.vtk" | sort)
 
-    ((current_start_i++))
-    if [[ $current_start_i -gt $MAX_START_I ]]; then
-        current_start_i=1
-        ((current_numcycles++))
+screenshot_index=0
+
+# Loop through each .vtk file
+for vtk_file in $vtk_files; do
+    echo "Processing $vtk_file..."
+
+    # Ensure that the file exists and is being moved correctly
+    if [[ ! -f "$vtk_file" ]]; then
+        echo "Error: VTK file does not exist: $vtk_file"
+        continue
     fi
 
-    # Ensure we do not exceed max numcycles
-    if [[ $current_numcycles -gt $MAX_NUMCYCLES ]]; then
-        break
-    fi
+    # Move the .vtk file to the dedicated tmp_vtks folder
+    mv "$vtk_file" "$TMP_VTK_DIR/"
+
+    # Extract the basename of the vtk file for later use
+    vtk_basename=$(basename "$vtk_file")
+
+    # Run FibViewer, it will generate a screenshot with the same name (vtk_basename.vtk.png)
+    "$FIBVIEWER" "$TMP_VTK_DIR/$vtk_basename" -screenshot
+
+    # The screenshot will be generated with the same name as the .vtk file but with .vtk.png appended
+    screenshot_file="$TMP_VTK_DIR/$vtk_basename.png"
+
+    # After FibViewer is done, move the screenshot to the main screenshots directory
+    mv "$screenshot_file" "$SCREENSHOT_DIR"
+
+    ((screenshot_index++))
 done
 
-# Wait for all background processes to complete
+# Wait if needed
 wait
-echo "Processing complete."
+
+# Create GIF or slideshow
+echo "Creating animation..."
+python3 "$PYTHON_SCRIPT" "$SCREENSHOT_DIR" "$FINAL_OUTPUT_DIR"
+
+echo "All done!"

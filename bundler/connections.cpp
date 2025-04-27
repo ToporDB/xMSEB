@@ -33,7 +33,7 @@ Connections::Connections(QString nname, QString ename, QString fileName)
         anode = new QVector3D(((QString)(vals.at(0))).toDouble(),
                               ((QString)(vals.at(1))).toDouble(),
                               ((QString)(vals.at(2))).toDouble());
-        qDebug() << anode->x() << anode->y() << anode->z();
+        // qDebug() << anode->x() << anode->y() << anode->z();
         nodes << *anode;
 
     }
@@ -246,6 +246,7 @@ void Connections::fullAttract() {
         for (int j = 0; j<i; j++){
             //qDebug() << j;
             attract();
+            writeVTK(j, cycle);
         }
         i--;
         spnow *= spfac;
@@ -327,9 +328,13 @@ float Connections::comp(int i, int j) {
 }
 
 void Connections::writeVTK() {
+    writeVTK(-1, -1);
+}
+
+void Connections::writeVTK(int current_start_i = -1, int current_numcycle = -1) {
     qDebug() << "Writing VTK file...";
 
-    QFile file(name() + ".vtk");
+    QFile file(name(current_start_i, current_numcycle) + ".vtk");
     if (!file.open(QIODevice::WriteOnly)) {
         qWarning() << "Error opening file for writing:" << file.fileName();
         return;
@@ -450,9 +455,14 @@ void Connections::writeSegments(){
 }
 
 QString Connections::name() {
-    return prefix;
-//            "_c_thr" + QString::number(c_thr,'f',4) +
-//            "_start_i" + QString("%1").arg(start_i,4,10,QLatin1Char('0')) +
-//            "_numcycles" + QString("%1").arg(numcycles,2,10,QLatin1Char('0') ) +
-//            ".txt";
+    return name(-1, -1);
+}
+
+QString Connections::name(int current_start_i = -1, int current_numcycles = -1) {
+    int output_start_i = current_start_i != -1 ? current_start_i : start_i;
+    int output_numcycles = current_numcycles != -1 ? current_numcycles : numcycles;
+    return prefix +
+           "_c_thr" + QString::number(c_thr,'f',4) +
+           "_numcycles" + QString("%1").arg(output_numcycles,2,10,QLatin1Char('0') ) +
+           "_start_i" + QString("%1").arg(output_start_i,4,10,QLatin1Char('0'));
 }

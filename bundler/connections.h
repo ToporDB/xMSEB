@@ -21,10 +21,12 @@ public:
     float* comps;
     float comp(int i, int j);
     void writeVTK();
+    void writeVTK(int, int);
     void writeBinaryVTK();
     void writeBinaryVTK(QString name);
     void writeSegments();
     QString name();
+    QString name(int, int);
 
     double c_thr, bell, beta;
     int start_i, numcycles, smooth;

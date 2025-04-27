@@ -16,11 +16,13 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+public slots:
+    void onMatrixValueChanged();
+    void onZoomValueChanged();
+
 private slots:
     void updateCameraValues(GLfloat* position);
     void updateCameraZoom(double zoom);
-    void onMatrixValueChanged();
-    void onZoomValueChanged();
 
 private:
     Ui::MainWindow *ui;
