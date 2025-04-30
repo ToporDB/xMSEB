@@ -168,6 +168,7 @@ void Connections::params() {
     smooth = 3;
     beta = 0.1;
     checkpoints = 0;
+    lane_width = 1.0f;
 }
 
 void Connections::subdivide(int newp) {
@@ -196,32 +197,45 @@ void Connections::attract(){
             double edgeDepthFactor = (-i * (i - (e->points.length())))/((e->points.length()/2)*(e->points.length()/2));
             double fsum = 0;
             QVector3D f(0,0,0);
+
+            QVector3D e_dir = e->points.last() - e->points.first();
+            e_dir.normalize();
+
             //for all attracting points...
             for (int ef=0; ef<edges.length(); ef++){
                 float c = comp(ie,ef);
 
-                if (c > c_thr) {
-                    QVector3D pe;
-                    if (e->flip(edges.at(ef))){
-                        pe = edges.at(ef)->points.at(i);
-                    } else {
-                        qDebug() << "Edge " << ie << " and " << ef << " is flipped" << Qt::endl;
-                        pe = edges.at(ef)->points.at((edges.at(ef)->points.length()-1)-i);
-                    }
+                if (c <= c_thr) continue;
 
-                    // Edge directionality
-                    // If the direction of the points are anti parallel, push one the point to the 'right' compare to the other.
+                Edge* other = edges.at(ef);
+                bool flipped = e->flip(other);
+                int idx = flipped ? other->points.length() - 1 - i : i;
 
-                    double weightOfTheComparedEdge = edges.at(ef)->wt.toDouble();
-//                    qDebug() << weightOfTheComparedEdge;
-                    float de = (pe-p).length();
+                QVector3D q_j = other->points.at(idx);
+                // Prepare for direction check
+                QVector3D q_dir = other->points.last() - other->points.first();
+                q_dir.normalize();
 
-                    double weight =  qExp(-(de*de)/(2*bell*bell)) / weightOfTheComparedEdge * c * c;
-
-                    fsum += weight;
-                    f += weight * pe;
-                    // QVector3D df;
+                QVector3D q_prev, q_next;
+                if (idx > 0 && idx < other->points.length() - 1) {
+                    q_prev = other->points.at(idx - 1);
+                    q_next = other->points.at(idx + 1);
+                } else {
+                    // Edge case fallback
+                    q_prev = q_next = q_j - q_dir; // Dummy values
                 }
+
+                QVector3D potential = computeDirectionalPotential(q_j, q_prev, q_next, e_dir, q_dir, lane_width);
+
+                // Edge directionality
+                // If the direction of the points are anti parallel, push one the point to the 'right' compare to the other.
+
+                double weightOfTheComparedEdge = other->wt.toDouble();
+                float de = (potential - p).length();
+                double weight = qExp(-(de * de) / (2 * bell * bell)) / weightOfTheComparedEdge * c * c;
+
+                fsum += weight;
+                f += weight * potential;
             }
 
             f /= fsum;
@@ -471,4 +485,30 @@ QString Connections::name(int current_start_i = -1, int current_numcycles = -1) 
            "_c_thr" + QString::number(c_thr,'f',4) +
            "_numcycles" + QString("%1").arg(output_numcycles,2,10,QLatin1Char('0') ) +
            "_start_i" + QString("%1").arg(output_start_i,4,10,QLatin1Char('0'));
+}
+
+QVector3D Connections::computeDirectionalPotential(
+    const QVector3D& q_j,             // Control point being attracted to
+    const QVector3D& q_prev,          // Previous point on the edge (q_j-1)
+    const QVector3D& q_next,          // Next point on the edge (q_j+1)
+    const QVector3D& e_dir,           // Direction vector of current edge
+    const QVector3D& q_dir,           // Direction vector of compared edge
+    float lane_width                  // Lane separation constant
+    ) const {
+    QVector3D potential = q_j;
+
+    double dot = QVector3D::dotProduct(e_dir, q_dir);
+
+    if (dot < 0) {
+        QVector3D Tj = q_next - q_prev;
+        if (Tj.lengthSquared() == 0) Tj = q_dir;  // Avoid degenerate case
+        Tj.normalize();
+
+        QVector3D up(0, 1, 0);
+        QVector3D Nj = QVector3D::crossProduct(Tj, up).normalized();
+
+        potential += lane_width * Nj;
+    }
+
+    return potential;
 }

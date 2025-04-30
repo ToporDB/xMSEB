@@ -27,8 +27,16 @@ public:
     void writeSegments();
     QString name();
     QString name(int, int);
+    QVector3D computeDirectionalPotential(
+        const QVector3D& q_j,
+        const QVector3D& q_prev,
+        const QVector3D& q_next,
+        const QVector3D& e_dir,
+        const QVector3D& q_dir,
+        float lane_width
+        ) const;
 
-    double c_thr, bell, beta;
+    double c_thr, bell, beta, lane_width;
     int start_i, numcycles, smooth, checkpoints;
     QString prefix;
 
