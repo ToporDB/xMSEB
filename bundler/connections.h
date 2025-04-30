@@ -29,7 +29,7 @@ public:
     QString name(int, int);
 
     double c_thr, bell, beta;
-    int start_i, numcycles, smooth;
+    int start_i, numcycles, smooth, checkpoints;
     QString prefix;
 
 private:

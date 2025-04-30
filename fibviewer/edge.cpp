@@ -12,37 +12,58 @@ Edge::Edge(QVector3D fn, QVector3D tn)
 void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha) {
     if (startAndEndNodes) {
         glPointSize(10);
-        glColor4f(0.0,0.0,0.0, alpha);
+        glColor4f(0.0, 0.0, 0.0, alpha);
         glBegin(GL_POINTS);
         glVertex(fn);
         glVertex(tn);
         glEnd();
     }
 
-    glColor4f(0.5,0.0,0.0,alpha);
     glLineWidth(1);
     glPointSize(3);
-    for (int i=0; i<points.length()-1; i++){
-        QVector3D p1 = points.at(i);
-        QVector3D p2 = points.at(i+1);
 
-        if (intermediateNodes) {
+    int n = points.length();
+    if (n < 2) return;
+
+    for (int i = 0; i < n - 1; ++i) {
+        QVector3D p1 = points.at(i);
+        QVector3D p2 = points.at(i + 1);
+
+        QVector3D nor = p1 - p2;
+
+        float t1 = float(i) / float(n - 1);
+        float t2 = float(i + 1) / float(n - 1);
+
+        // Custom gradient: red → black → blue
+        auto gradient = [](float t) -> QVector3D {
+            if (t < 0.5f) {
+                float f = t / 0.5f; // 0 to 1
+                return QVector3D(1.0f * (1 - f), 0.0f, 0.0f); // Red to black
+            } else {
+                float f = (t - 0.5f) / 0.5f; // 0 to 1
+                return QVector3D(0.0f, 0.0f, 1.0f * f); // Black to blue
+            }
+        };
+
+        QVector3D col1 = gradient(t1);
+        QVector3D col2 = gradient(t2);
+
+        glBegin(GL_LINES);
+        glNormal3f(nor.x(), nor.y(), nor.z());
+
+        glColor4f(col1.x(), col1.y(), col1.z(), alpha);
+        glVertex(p1);
+
+        glColor4f(col2.x(), col2.y(), col2.z(), alpha);
+        glVertex(p2);
+        glEnd();
+
+        if (intermediateNodes && i != 0) {
+            glColor4f(col1.x(), col1.y(), col1.z(), alpha);
             glBegin(GL_POINTS);
-            if (i!=0) glVertex(p1);
+            glVertex(p1);
             glEnd();
         }
-
-        glBegin(GL_LINES);
-        QVector3D nor = p1-p2;
-        glNormal3f(nor.x(),nor.y(),nor.z());
-        glVertex(p1);
-        glVertex(p2);
-        glEnd();
-
-        glBegin(GL_LINES);
-        glVertex(p1);
-        glVertex(p2);
-        glEnd();
     }
 }
 

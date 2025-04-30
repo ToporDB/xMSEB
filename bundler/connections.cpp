@@ -167,6 +167,7 @@ void Connections::params() {
     bell = 5;
     smooth = 3;
     beta = 0.1;
+    checkpoints = 0;
 }
 
 void Connections::subdivide(int newp) {
@@ -204,13 +205,18 @@ void Connections::attract(){
                     if (e->flip(edges.at(ef))){
                         pe = edges.at(ef)->points.at(i);
                     } else {
+                        qDebug() << "Edge " << ie << " and " << ef << " is flipped" << Qt::endl;
                         pe = edges.at(ef)->points.at((edges.at(ef)->points.length()-1)-i);
                     }
+
+                    // Edge directionality
+                    // If the direction of the points are anti parallel, push one the point to the 'right' compare to the other.
+
                     double weightOfTheComparedEdge = edges.at(ef)->wt.toDouble();
 //                    qDebug() << weightOfTheComparedEdge;
                     float de = (pe-p).length();
 
-                    double weight =  qExp(-(de*de)/(2*bell*bell)) / weightOfTheComparedEdge; // * c * c;
+                    double weight =  qExp(-(de*de)/(2*bell*bell)) / weightOfTheComparedEdge * c * c;
 
                     fsum += weight;
                     f += weight * pe;
@@ -219,7 +225,7 @@ void Connections::attract(){
             }
 
             f /= fsum;
-            QVector3D force = edgeDepthFactor * edgeDepthFactor * (f-p)/(weightOfThisEdge);
+            QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f-p)/(weightOfThisEdge));
 
             // Adding momentum, aka, let the previous force determine the next one
             force += beta * e->forces.at(i);
@@ -246,7 +252,7 @@ void Connections::fullAttract() {
         for (int j = 0; j<i; j++){
             //qDebug() << j;
             attract();
-            writeVTK(j, cycle);
+            if (checkpoints) writeVTK(j, cycle);
         }
         i--;
         spnow *= spfac;
@@ -346,7 +352,7 @@ void Connections::writeVTK(int current_start_i = -1, int current_numcycle = -1) 
     int totalLines = edges.size();
 
     // First, calculate the total number of points dynamically
-    for (const Edge* edge : edges) {
+    for (const Edge* edge : qAsConst(edges)) {
         totalPoints += edge->points.size();
     }
 
@@ -359,7 +365,7 @@ void Connections::writeVTK(int current_start_i = -1, int current_numcycle = -1) 
 
     // Write all points
     int pointIndex = 0;  // Track global point index
-    for (const Edge* edge : edges) {
+    for (const Edge* edge : qAsConst(edges)) {
         for (const QVector3D& po : edge->points) {
             out << po.x() << " " << po.y() << " " << po.z() << Qt::endl;
             ++pointIndex;
@@ -369,7 +375,7 @@ void Connections::writeVTK(int current_start_i = -1, int current_numcycle = -1) 
     // Write the connectivity (LINES)
     out << "LINES " << totalLines << " " << (totalPoints + totalLines) << Qt::endl;
     pointIndex = 0;
-    for (const Edge* edge : edges) {
+    for (const Edge* edge : qAsConst(edges)) {
         int edgeSize = edge->points.size();
         if (edgeSize == 0) continue;  // Skip empty edges
 

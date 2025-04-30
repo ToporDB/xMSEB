@@ -332,7 +332,7 @@ if __name__ == "__main__":
     VTK_FILE = sys.argv[1]
     _, nodes, edges, _ = read_vtk_ascii(VTK_FILE)
 
-    NUM_VOXELS = 100
+    NUM_VOXELS = 50
 
     # Get voxel grid parameters
     min_coords, max_coords = get_bounding_box(nodes)
