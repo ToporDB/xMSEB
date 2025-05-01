@@ -20,7 +20,7 @@ void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha) {
     }
 
     glLineWidth(1);
-    glPointSize(3);
+    glPointSize(5);
 
     int n = points.length();
     if (n < 2) return;

@@ -45,8 +45,6 @@ void MainWindow::onZoomValueChanged() {
     double zoom = value.toDouble(&ok); // Convert text to double
 
     if (ok) {
-        qDebug() << "Zoom level: " << zoom;
-
         // If you need to send the zoom value to GLWidget
         ui->widget->setZoomLevel(zoom);
     } else {

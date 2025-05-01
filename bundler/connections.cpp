@@ -182,7 +182,6 @@ void Connections::subdivide(int newp) {
 }
 
 void Connections::attract(){
-
     //for all edges...
     #pragma omp parallel for
     for (int ie = 0; ie < edges.size(); ++ie) {
@@ -208,27 +207,24 @@ void Connections::attract(){
                 if (c <= c_thr) continue;
 
                 Edge* other = edges.at(ef);
-                bool flipped = e->flip(other);
-                int idx = flipped ? other->points.length() - 1 - i : i;
 
-                QVector3D q_j = other->points.at(idx);
+                QVector3D q_j = other->points.at(i);
                 // Prepare for direction check
                 QVector3D q_dir = other->points.last() - other->points.first();
                 q_dir.normalize();
 
                 QVector3D q_prev, q_next;
-                if (idx > 0 && idx < other->points.length() - 1) {
-                    q_prev = other->points.at(idx - 1);
-                    q_next = other->points.at(idx + 1);
+                if (i > 0 && i < other->points.length() - 1) {
+                    q_prev = other->points.at(i - 1);
+                    q_next = other->points.at(i + 1);
                 } else {
                     // Edge case fallback
                     q_prev = q_next = q_j - q_dir; // Dummy values
                 }
 
-                QVector3D potential = computeDirectionalPotential(q_j, q_prev, q_next, e_dir, q_dir, lane_width);
-
                 // Edge directionality
                 // If the direction of the points are anti parallel, push one the point to the 'right' compare to the other.
+                QVector3D potential = computeDirectionalPotential(q_j, q_prev, q_next, e_dir, q_dir, lane_width);
 
                 double weightOfTheComparedEdge = other->wt.toDouble();
                 float de = (potential - p).length();

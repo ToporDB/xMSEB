@@ -164,8 +164,7 @@ void GLWidget::mouseReleaseEvent(QMouseEvent *event){
 
 void GLWidget::wheelEvent (QWheelEvent *event)
 {
-    int d = event->delta();
-    qDebug() << "scale" << scale;
+    int d = event->angleDelta().y();
     scale *= 1.0-d/1200.0;
 
     emit cameraUpdatedZoom(scale);

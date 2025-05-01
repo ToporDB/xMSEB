@@ -21,29 +21,13 @@ Edge::Edge(QVector3D fn, QVector3D tn, QString wt, QString startCluster, QString
 {
     this->fn = fn;
     this->tn = tn;
-    this->wt = wt; //weight parameter
+    this->wt = wt;
     this->startCluster = startCluster;
     this->endCluster = endCluster;
 
     QVector3D nv(0,0,0);
-    // float lenght = 2.0f;
-    // // For self loops, add already two points randomly
-    // if (fn == tn) {
-    //     // select a random point in a sphere, where the center of the sphere is the node
-    //     points << fn << QVector3D(
-    //         fn.x() + getRandomFloat(lenght) + 1.0f,
-    //         fn.y() + getRandomFloat(lenght) + 1.0f,
-    //         fn.z() + getRandomFloat(lenght) + 1.0f
-    //         ) << QVector3D(
-    //                   fn.x() + getRandomFloat(lenght) + 1.0f,
-    //                   fn.y() + getRandomFloat(lenght) + 1.0f,
-    //                   fn.z() + getRandomFloat(lenght) + 1.0f
-    //                   ) << tn;
-    //     forces << nv << nv << nv << nv;
-    // } else {
-        points << fn << tn;
-        forces << nv << nv;
-    // }
+    points << fn << tn;
+    forces << nv << nv;
 }
 
 void Edge::subdivide(int newp){
