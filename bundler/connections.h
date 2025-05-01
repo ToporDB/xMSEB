@@ -33,7 +33,8 @@ public:
         const QVector3D& q_next,
         const QVector3D& e_dir,
         const QVector3D& q_dir,
-        float lane_width
+        float lane_width,
+        double weightOfComparedEdge
         ) const;
 
     double c_thr, bell, beta, lane_width;

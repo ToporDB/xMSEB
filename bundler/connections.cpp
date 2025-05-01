@@ -3,7 +3,6 @@
 //#include <qfile.h>
 //#include <qtextstream.h>
 #include <QException>
-
 #include <QtDebug>
 
 #include <QStringList>
@@ -187,9 +186,6 @@ void Connections::attract(){
     for (int ie = 0; ie < edges.size(); ++ie) {
         Edge* e = edges.at(ie);
         double weightOfThisEdge = e->wt.toDouble();
-        //double cThresholdHere = c_thr; //  + weightOfThisEdge/50.0;
-        //qDebug() << cThresholdHere;
-//        qDebug() << "Edge " << ie << "has parameters: " << e->fn << ", " << e->tn << ", " << e->wt;
         //for every point...
         for (int i=1; i<e->points.length()-1; i++){
             QVector3D p = e->points.at(i);
@@ -222,11 +218,15 @@ void Connections::attract(){
                     q_prev = q_next = q_j - q_dir; // Dummy values
                 }
 
-                // Edge directionality
-                // If the direction of the points are anti parallel, push one the point to the 'right' compare to the other.
-                QVector3D potential = computeDirectionalPotential(q_j, q_prev, q_next, e_dir, q_dir, lane_width);
+                float seg_length = (q_next - q_prev).length();
+                float lane_scaling = lane_width * qBound(0.1f, seg_length / 10.0f, 1.0f);
 
                 double weightOfTheComparedEdge = other->wt.toDouble();
+
+                // Edge directionality
+                // If the direction of the points are anti parallel, push one the point to the 'right' compare to the other.
+                QVector3D potential = computeDirectionalPotential(q_j, q_prev, q_next, e_dir, q_dir, lane_scaling, weightOfTheComparedEdge);
+
                 float de = (potential - p).length();
                 double weight = qExp(-(de * de) / (2 * bell * bell)) / weightOfTheComparedEdge * c * c;
 
@@ -489,7 +489,8 @@ QVector3D Connections::computeDirectionalPotential(
     const QVector3D& q_next,          // Next point on the edge (q_j+1)
     const QVector3D& e_dir,           // Direction vector of current edge
     const QVector3D& q_dir,           // Direction vector of compared edge
-    float lane_width                  // Lane separation constant
+    float lane_width,                 // Lane separation constant
+    double weightOfComparedEdge
     ) const {
     QVector3D potential = q_j;
 
@@ -503,7 +504,12 @@ QVector3D Connections::computeDirectionalPotential(
         QVector3D up(0, 1, 0);
         QVector3D Nj = QVector3D::crossProduct(Tj, up).normalized();
 
-        potential += lane_width * Nj;
+        double seg_length = (q_next - q_prev).length();
+        double seg_factor = qBound(0.1f, static_cast<float>(seg_length / 10.0f), 1.0f);
+        double lane_scaling = lane_width * seg_factor / (1.0 + weightOfComparedEdge);
+
+        double antiparallel_strength = qBound(0.0f, static_cast<float>(-dot), 1.0f);
+        potential += lane_scaling * antiparallel_strength * Nj;
     }
 
     return potential;
