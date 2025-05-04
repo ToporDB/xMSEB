@@ -20,7 +20,12 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
 
     if (qApp->arguments().indexOf(QRegExp("-help"))!=-1 || qApp->arguments().length()==1) {
-            qDebug() << "bundler (-nodes <nodes> -cons <connections> -fileName <fileName> / -fib <.fib-file>) [-c_thr <compatibility threshold>] [-start_i <iterations in 1st cycle>] [-numcycles <number of cycles>] [-checkpoints <0 or 1>, default is 0]";
+            qDebug() << "bundler (-nodes <nodes> -cons <connections> -fileName <fileName> / -fib <.fib-file>) "
+                    "[-c_thr <compatibility threshold>] "
+                    "[-start_i <iterations in 1st cycle>] "
+                    "[-numcycles <number of cycles>] "
+                    "[-checkpoints <0 or 1>, default is 0] "
+                    "[-directed <0 or 1>, default is 0]";
             return 1;
     }
 
@@ -44,6 +49,7 @@ int main(int argc, char *argv[])
     if (arg("bell")!="") cons->bell = arg("bell").toDouble();
     if (arg("smooth")!="") cons->smooth = arg("smooth").toInt();
     if (arg("checkpoints")!="") cons->smooth = arg("checkpoints").toInt();
+    if (arg("directed")!="") cons->directed = arg("directed").toInt();
 
     qDebug() << cons->name();
 

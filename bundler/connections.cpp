@@ -168,6 +168,7 @@ void Connections::params() {
     beta = 0.1;
     checkpoints = 0;
     lane_width = 1.0f;
+    directed = 0;
 }
 
 void Connections::subdivide(int newp) {
@@ -180,73 +181,58 @@ void Connections::subdivide(int newp) {
     }
 }
 
-void Connections::attract(){
-    //for all edges...
-    #pragma omp parallel for
+void Connections::attract() {
+#pragma omp parallel for
     for (int ie = 0; ie < edges.size(); ++ie) {
         Edge* e = edges.at(ie);
         double weightOfThisEdge = e->wt.toDouble();
-        //for every point...
-        for (int i=1; i<e->points.length()-1; i++){
+
+        for (int i = 1; i < e->points.length() - 1; ++i) {
             QVector3D p = e->points.at(i);
-            double edgeDepthFactor = (-i * (i - (e->points.length())))/((e->points.length()/2)*(e->points.length()/2));
+            double edgeDepthFactor = (-i * (i - e->points.length())) / std::pow(e->points.length() / 2.0, 2);
             double fsum = 0;
-            QVector3D f(0,0,0);
+            QVector3D f(0, 0, 0);
 
             QVector3D e_dir = e->points.last() - e->points.first();
             e_dir.normalize();
 
-            //for all attracting points...
-            for (int ef=0; ef<edges.length(); ef++){
-                float c = comp(ie,ef);
-
+            for (int ef = 0; ef < edges.size(); ++ef) {
+                float c = comp(ie, ef);
                 if (c <= c_thr) continue;
 
                 Edge* other = edges.at(ef);
 
-                QVector3D q_j = other->points.at(i);
-                // Prepare for direction check
-                QVector3D q_dir = other->points.last() - other->points.first();
-                q_dir.normalize();
+                QVector3D potential;
+                double weight = 0.0;
 
-                QVector3D q_prev, q_next;
-                if (i > 0 && i < other->points.length() - 1) {
-                    q_prev = other->points.at(i - 1);
-                    q_next = other->points.at(i + 1);
+                if (directed) {
+                    std::tie(potential, weight) = computeDirectedAttractionForce(
+                        e, other, i, p, e_dir, c
+                        );
                 } else {
-                    // Edge case fallback
-                    q_prev = q_next = q_j - q_dir; // Dummy values
+                    std::tie(potential, weight) = computeUndirectedAttractionForce(
+                        e, other, i, p, c
+                        );
                 }
-
-                float seg_length = (q_next - q_prev).length();
-                float lane_scaling = lane_width * qBound(0.1f, seg_length / 10.0f, 1.0f);
-
-                double weightOfTheComparedEdge = other->wt.toDouble();
-
-                // Edge directionality
-                // If the direction of the points are anti parallel, push one the point to the 'right' compare to the other.
-                QVector3D potential = computeDirectionalPotential(q_j, q_prev, q_next, e_dir, q_dir, lane_scaling, weightOfTheComparedEdge);
-
-                float de = (potential - p).length();
-                double weight = qExp(-(de * de) / (2 * bell * bell)) / weightOfTheComparedEdge * c * c;
 
                 fsum += weight;
                 f += weight * potential;
             }
 
-            f /= fsum;
-            QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f-p)/(weightOfThisEdge));
-
-            // Adding momentum, aka, let the previous force determine the next one
-            force += beta * e->forces.at(i);
-
-            e->forces.replace(i,force);
+            if (fsum > 0) {
+                f /= fsum;
+                QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f - p) / weightOfThisEdge);
+                force += beta * e->forces.at(i);  // Momentum
+                e->forces.replace(i, force);
+            }
         }
     }
-    for (int e=0; e<edges.size(); e++){
+
+    for (int e = 0; e < edges.size(); ++e) {
         edges.at(e)->applyForces();
     }
 }
+
 
 void Connections::fullAttract() {
 
@@ -505,7 +491,7 @@ QVector3D Connections::computeDirectionalPotential(
         QVector3D Nj = QVector3D::crossProduct(Tj, up).normalized();
 
         double seg_length = (q_next - q_prev).length();
-        double seg_factor = qBound(0.1f, static_cast<float>(seg_length / 10.0f), 1.0f);
+        double seg_factor = qBound(0.01f, static_cast<float>(seg_length / 10.0f), 1.0f);
         double lane_scaling = lane_width * seg_factor / (1.0 + weightOfComparedEdge);
 
         double antiparallel_strength = qBound(0.0f, static_cast<float>(-dot), 1.0f);
@@ -513,4 +499,48 @@ QVector3D Connections::computeDirectionalPotential(
     }
 
     return potential;
+}
+
+std::pair<QVector3D, double> Connections::computeUndirectedAttractionForce(
+    Edge* e, Edge* other, int i, const QVector3D& p, float c
+    ) const {
+    QVector3D pe;
+    if (e->flip(other)) {
+        pe = other->points.at(i);
+    } else {
+        pe = other->points.at(other->points.length() - 1 - i);
+    }
+
+    double weightOfTheComparedEdge = other->wt.toDouble();
+    float de = (pe - p).length();
+
+    double weight = qExp(-(de * de) / (2 * bell * bell)) / weightOfTheComparedEdge * c * c;
+
+    return {pe, weight};
+}
+
+std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
+    Edge* e, Edge* other, int i, const QVector3D& p,
+    const QVector3D& e_dir, float c
+    ) const {
+    QVector3D q_j = other->points.at(i);
+    QVector3D q_dir = other->points.last() - other->points.first();
+    q_dir.normalize();
+
+    QVector3D q_prev, q_next;
+    if (i > 0 && i < other->points.length() - 1) {
+        q_prev = other->points.at(i - 1);
+        q_next = other->points.at(i + 1);
+    } else {
+        q_prev = q_next = q_j - q_dir; // fallback
+    }
+
+    double weightOfTheComparedEdge = other->wt.toDouble();
+
+    QVector3D potential = computeDirectionalPotential(q_j, q_prev, q_next, e_dir, q_dir, lane_width, weightOfTheComparedEdge);
+
+    float de = (potential - p).length();
+    double weight = qExp(-(de * de) / (2 * bell * bell)) / weightOfTheComparedEdge * c * c;
+
+    return {potential, weight};
 }

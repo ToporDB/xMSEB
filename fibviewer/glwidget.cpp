@@ -105,7 +105,7 @@ void GLWidget::paintGL()
     glEnable(GL_DEPTH_TEST);
 
     for (int i = 0; i < cons->edges.size(); ++i) {
-        cons->edges[i]->paintGL(intermediateNodes, startAndEndNodes, stuffAlpha);
+        cons->edges[i]->paintGL(intermediateNodes, startAndEndNodes, stuffAlpha, dualGradient);
     }
 
 }
@@ -199,6 +199,7 @@ void GLWidget::keyPressEvent(QKeyEvent *event) {
 
     if (event->key() == Qt::Key_S) startAndEndNodes = !startAndEndNodes;
     if (event->key() == Qt::Key_I) intermediateNodes = !intermediateNodes;
+    if (event->key() == Qt::Key_G) dualGradient = !dualGradient;
 
     updateGL();
 }

@@ -2,7 +2,7 @@
 
 # Check if at least one argument is provided
 if [ "$#" -lt 1 ]; then
-    echo "Usage: $0 (<fib-file> | <nodes> <connections> <output-filename>) [c_thr] [start_i] [numcycles] [bell]"
+    echo "Usage: $0 (<fib-file> | <nodes> <connections> <output-filename>) [c_thr] [start_i] [numcycles] [bell] [direction]"
     exit 1
 fi
 
@@ -11,6 +11,7 @@ C_THR="${4:-0.9}"
 START_I="${5:-10}"
 NUMCYCLES="${6:-10}"
 BELL="${7:-5}"
+DIRECTED="${8:-1}"
 
 # Define paths
 BUNDLER="./bundler/build/Desktop-Debug/bundler"
@@ -34,7 +35,7 @@ if [[ "$1" == *.fib ]]; then
     # Case: Using a .fib file
     FIB_FILE="$1"
     echo "Running Bundler with: -fib $FIB_FILE -c_thr $C_THR -start_i $START_I -numcycles $NUMCYCLES"
-    "$BUNDLER" -fib "$FIB_FILE" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES"
+    "$BUNDLER" -fib "$FIB_FILE" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES" -directed "$DIRECTED"
 
     # Move and run FibViewer on the output file
     FIB_TXT_FILE="${FIB_FILE}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I").vtk"
@@ -50,7 +51,7 @@ else
     OUTPUT_FILENAME="$3"
 
     echo "Running Bundler with: -nodes $NODES -cons $CONNECTIONS -fileName $OUTPUT_FILENAME -c_thr $C_THR -start_i $START_I -numcycles $NUMCYCLES"
-    "$BUNDLER" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES"
+    "$BUNDLER" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES" -directed "$DIRECTED"
 
     # Move and run FibViewer on the output file
     FIB_TXT_FILE="${OUTPUT_FILENAME}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I").vtk"

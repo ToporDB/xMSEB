@@ -9,7 +9,7 @@ Edge::Edge(QVector3D fn, QVector3D tn)
     points << fn << tn;
 }
 
-void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha) {
+void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, bool dualGradient) {
     if (startAndEndNodes) {
         glPointSize(10);
         glColor4f(0.0, 0.0, 0.0, alpha);
@@ -31,22 +31,29 @@ void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha) {
 
         QVector3D nor = p1 - p2;
 
-        float t1 = float(i) / float(n - 1);
-        float t2 = float(i + 1) / float(n - 1);
+        QVector3D col1, col2;
 
-        // Custom gradient: red → black → blue
-        auto gradient = [](float t) -> QVector3D {
-            if (t < 0.5f) {
-                float f = t / 0.5f; // 0 to 1
-                return QVector3D(1.0f * (1 - f), 0.0f, 0.0f); // Red to black
-            } else {
-                float f = (t - 0.5f) / 0.5f; // 0 to 1
-                return QVector3D(0.0f, 0.0f, 1.0f * f); // Black to blue
-            }
-        };
+        if (dualGradient) {
+            float t1 = float(i) / float(n - 1);
+            float t2 = float(i + 1) / float(n - 1);
 
-        QVector3D col1 = gradient(t1);
-        QVector3D col2 = gradient(t2);
+            // Red → Black → Blue gradient
+            auto gradient = [](float t) -> QVector3D {
+                if (t < 0.5f) {
+                    float f = t / 0.5f; // 0 to 1
+                    return QVector3D(1.0f * (1 - f), 0.0f, 0.0f); // Red to black
+                } else {
+                    float f = (t - 0.5f) / 0.5f; // 0 to 1
+                    return QVector3D(0.0f, 0.0f, 1.0f * f); // Black to blue
+                }
+            };
+
+            col1 = gradient(t1);
+            col2 = gradient(t2);
+        } else {
+            // Solid red
+            col1 = col2 = QVector3D(1.0f, 0.0f, 0.0f);
+        }
 
         glBegin(GL_LINES);
         glNormal3f(nor.x(), nor.y(), nor.z());

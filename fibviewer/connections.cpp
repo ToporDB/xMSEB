@@ -281,7 +281,7 @@ void Connections::sortCons(){
         double z2 = p->p2->x()*mat[2]+p->p2->y()*mat[6]+p->p2->z()*mat[10]+mat[14];
         p->depth = (z1+z2)/2.0;
     }
-    qSort(prims.begin(),prims.end(),primLTprim);
+    std::sort(prims.begin(),prims.end(),primLTprim);
 }
 
 void Connections::writeBinaryVTK(QString filename){

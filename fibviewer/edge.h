@@ -13,7 +13,7 @@ public:
     QVector3D fn, tn;
     QList<QVector3D> points;
 
-    void paintGL(bool, bool, float);
+    void paintGL(bool, bool, float, bool);
     void glVertex(QVector3D v);
     double length();
     double minDist(QVector3D p1, QVector3D p2, QVector3D p);

@@ -36,9 +36,17 @@ public:
         float lane_width,
         double weightOfComparedEdge
         ) const;
+    std::pair<QVector3D, double> computeDirectedAttractionForce(
+        Edge* e, Edge* other, int i, const QVector3D& p,
+        const QVector3D& e_dir, float c
+        ) const;
+
+    std::pair<QVector3D, double> computeUndirectedAttractionForce(
+        Edge* e, Edge* other, int i, const QVector3D& p, float c
+        ) const;
 
     double c_thr, bell, beta, lane_width;
-    int start_i, numcycles, smooth, checkpoints;
+    int start_i, numcycles, smooth, checkpoints, directed;
     QString prefix;
 
 private:
