@@ -8,6 +8,7 @@ SCREENSHOT_DIR="./outputs/screenshots"
 TMP_VTK_DIR="./outputs/tmp_vtks"
 FINAL_OUTPUT_DIR="./outputs/final"
 PYTHON_SCRIPT="./make_gif_or_slider.py"
+VIEWFILE="./viewmatrix.txt"
 
 # Clean previous screenshots
 rm -rf "$SCREENSHOT_DIR"
@@ -48,10 +49,10 @@ if [[ "$1" == *.fib ]]; then
     # Case: Using a .fib file
     FIB_FILE="$1"
     echo "Running Bundler with: -fib $FIB_FILE -c_thr $C_THR -start_i $START_I -numcycles $NUMCYCLES"
-    "$BUNDLER" -fib "$FIB_FILE" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES"
+    "$BUNDLER" -fib "$FIB_FILE" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES" -checkpoints 1 -direction 1
 
     # Move and run FibViewer on the output file
-    FIB_TXT_FILE="${FIB_FILE}.vtk"
+    FIB_TXT_FILE="${FIB_FILE}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I").vtk"
 else
     # Case: Using -nodes and -cons
     if [ "$#" -lt 3 ]; then
@@ -64,11 +65,12 @@ else
     OUTPUT_FILENAME="$3"
 
     echo "Running Bundler with: -nodes $NODES -cons $CONNECTIONS -fileName $OUTPUT_FILENAME -c_thr $C_THR -start_i $START_I -numcycles $NUMCYCLES"
-    "$BUNDLER" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES"
+    "$BUNDLER" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES" -checkpoints 1 -direction 1
 
     # Move and run FibViewer on the output file
-    FIB_TXT_FILE="${OUTPUT_FILENAME}.vtk"
+    FIB_TXT_FILE="${OUTPUT_FILENAME}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I").vtk"
 fi
+
 
 # Find all VTK files generated that match the OUTPUT_FILENAME prefix
 vtk_files=$(find "$BUNDLER_OUTPUT_DIR" -name "$OUTPUT_FILENAME*.vtk" | sort)
@@ -92,7 +94,8 @@ for vtk_file in $vtk_files; do
     vtk_basename=$(basename "$vtk_file")
 
     # Run FibViewer, it will generate a screenshot with the same name (vtk_basename.vtk.png)
-    "$FIBVIEWER" "$TMP_VTK_DIR/$vtk_basename" -screenshot
+    echo "$FIBVIEWER $TMP_VTK_DIR/$vtk_basename -screenshot -viewmatrix $VIEWFILE"
+    "$FIBVIEWER" "$TMP_VTK_DIR/$vtk_basename" -screenshot -viewmatrix "$VIEWFILE"
 
     # The screenshot will be generated with the same name as the .vtk file but with .vtk.png appended
     screenshot_file="$TMP_VTK_DIR/$vtk_basename.png"

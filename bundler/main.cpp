@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     if (arg("numcycles")!="") cons->numcycles = arg("numcycles").toInt();
     if (arg("bell")!="") cons->bell = arg("bell").toDouble();
     if (arg("smooth")!="") cons->smooth = arg("smooth").toInt();
-    if (arg("checkpoints")!="") cons->smooth = arg("checkpoints").toInt();
+    if (arg("checkpoints")!="") cons->checkpoints = arg("checkpoints").toInt();
     if (arg("directed")!="") cons->directed = arg("directed").toInt();
 
     qDebug() << cons->name();

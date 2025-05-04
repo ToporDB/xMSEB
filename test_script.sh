@@ -17,6 +17,7 @@ DIRECTED="${8:-1}"
 BUNDLER="./bundler/build/Desktop-Debug/bundler"
 FIBVIEWER="./fibviewer/build/Desktop-Debug/fibviewer"
 OUTPUT_DIR="./outputs"
+VIEWFILE="./viewmatrix.txt"
 
 # Ensure binaries are executable
 if [[ ! -x "$BUNDLER" ]]; then
@@ -68,7 +69,7 @@ if [[ -f "$FIB_TXT_FILE" ]]; then
 
     python3 ./metrics/voxel_based_edge_density.py "$OUTPUT_DIR/$FIB_TXT_FILE"
 
-    "$FIBVIEWER" "$OUTPUT_DIR/$FIB_TXT_FILE"
+    "$FIBVIEWER" "$OUTPUT_DIR/$FIB_TXT_FILE" -viewmatrix "$VIEWFILE"
 else
     echo "Error: Expected output file '$FIB_TXT_FILE' not found!"
     exit 2
