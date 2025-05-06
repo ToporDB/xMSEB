@@ -471,31 +471,43 @@ QString Connections::name(int current_start_i = -1, int current_numcycles = -1) 
 
 QVector3D Connections::computeDirectionalPotential(
     const QVector3D& q_j,             // Control point being attracted to
-    const QVector3D& q_prev,          // Previous point on the edge (q_j-1)
-    const QVector3D& q_next,          // Next point on the edge (q_j+1)
-    const QVector3D& e_dir,           // Direction vector of current edge
-    const QVector3D& q_dir,           // Direction vector of compared edge
-    float lane_width,                 // Lane separation constant
-    double weightOfComparedEdge
+    const QVector3D& q_prev,          // Previous point on the edge
+    const QVector3D& q_next,          // Next point on the edge
+    const QVector3D& e_dir,           // Direction of current edge
+    const QVector3D& q_dir,           // Direction of compared edge
+    float lane_width,                 // Lane separation
+    double weightOfComparedEdge       // Optional scaling input
     ) const {
     QVector3D potential = q_j;
 
     double dot = QVector3D::dotProduct(e_dir, q_dir);
 
+    // Only apply if anti-parallel or close to it
     if (dot < 0) {
+        // Tangent vector of the compared edge
         QVector3D Tj = q_next - q_prev;
-        if (Tj.lengthSquared() == 0) Tj = q_dir;  // Avoid degenerate case
+        if (Tj.lengthSquared() < 1e-6f)
+            Tj = q_dir;  // Fallback if degenerate
         Tj.normalize();
 
-        QVector3D up(0, 1, 0);
-        QVector3D Nj = QVector3D::crossProduct(Tj, up).normalized();
+        // Compute a normal within the plane of the compared edge
+        // Use cross product of Tj and e_dir (more robust in 3D)
+        QVector3D Nj = QVector3D::crossProduct(Tj, e_dir);
+        if (Nj.lengthSquared() < 1e-6f)
+            return potential; // skip shift if directions are colinear
 
+        Nj.normalize();
+
+        // Project Nj back into the plane of the edge to prevent drift
+        QVector3D P_normal = QVector3D::crossProduct(Tj, Nj).normalized();
+        QVector3D in_plane_dir = QVector3D::crossProduct(P_normal, Tj).normalized();
+
+        // Scale shift by local segment length and lane width
         double seg_length = (q_next - q_prev).length();
-        double seg_factor = qBound(0.01f, static_cast<float>(seg_length / 10.0f), 1.0f);
-        double lane_scaling = lane_width * seg_factor / (1.0 + weightOfComparedEdge);
+        float seg_factor = qBound(0.01f, static_cast<float>(seg_length / 10.0f), 1.0f);
+        float lane_scaling = lane_width * seg_factor;
 
-        double antiparallel_strength = qBound(0.0f, static_cast<float>(-dot), 1.0f);
-        potential += lane_scaling * antiparallel_strength * Nj;
+        potential += lane_scaling * in_plane_dir;
     }
 
     return potential;
