@@ -33,8 +33,7 @@ public:
         const QVector3D& q_next,
         const QVector3D& e_dir,
         const QVector3D& q_dir,
-        float lane_width,
-        double weightOfComparedEdge
+        QVector3D e_i
         ) const;
     std::pair<QVector3D, double> computeDirectedAttractionForce(
         Edge* e, Edge* other, int i, const QVector3D& p,

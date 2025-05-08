@@ -167,7 +167,7 @@ void Connections::params() {
     smooth = 3;
     beta = 0.1;
     checkpoints = 0;
-    lane_width = 25.0f;
+    lane_width = 2.8f;
     directed = 0;
 }
 
@@ -475,8 +475,7 @@ QVector3D Connections::computeDirectionalPotential(
     const QVector3D& q_next,          // Next point on the edge
     const QVector3D& e_dir,           // Direction of current edge
     const QVector3D& q_dir,           // Direction of compared edge
-    float lane_width,                 // Lane separation
-    double weightOfComparedEdge       // Optional scaling input
+    QVector3D e_i
     ) const {
     QVector3D potential = q_j;
 
@@ -490,25 +489,11 @@ QVector3D Connections::computeDirectionalPotential(
             Tj = q_dir;  // Fallback if degenerate
         Tj.normalize();
 
-        // Compute a normal within the plane of the compared edge
-        // Use cross product of Tj and e_dir (more robust in 3D)
-        QVector3D Nj = QVector3D::crossProduct(Tj, e_dir);
-        if (Nj.lengthSquared() < 1e-6f)
-            return potential; // skip shift if directions are colinear
+        QVector3D V_ij = e_i - QVector3D::dotProduct((e_i - q_j), Tj) * Tj;
+        QVector3D N_ij = V_ij - q_j;
+        N_ij = N_ij.normalized();
 
-        Nj.normalize();
-
-        // Project Nj back into the plane of the edge to prevent drift
-        QVector3D P_normal = QVector3D::crossProduct(Tj, Nj).normalized();
-        QVector3D in_plane_dir = QVector3D::crossProduct(P_normal, Tj).normalized();
-
-        // Scale shift by local segment length and lane width
-        double seg_length = (q_next - q_prev).length();
-        float seg_factor = qBound(0.01f, static_cast<float>(seg_length / 10), 1.0f);
-        float lane_scaling = lane_width * seg_factor;
-
-        // get a force which is reasonable and not a black force. other than that it is nice!
-        potential += lane_scaling * in_plane_dir * 2000;
+        potential = N_ij;
     }
 
     return potential;
@@ -550,7 +535,7 @@ std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
 
     double weightOfTheComparedEdge = other->wt.toDouble();
 
-    QVector3D potential = computeDirectionalPotential(q_j, q_prev, q_next, e_dir, q_dir, lane_width, weightOfTheComparedEdge);
+    QVector3D potential = computeDirectionalPotential(q_j, q_prev, q_next, e_dir, q_dir, e->points.at(i));
 
     float de = (potential - p).length();
     double weight = qExp(-(de * de) / (2 * bell * bell)) / weightOfTheComparedEdge * c * c;
