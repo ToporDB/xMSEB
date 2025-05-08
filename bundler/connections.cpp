@@ -238,7 +238,7 @@ void Connections::fullAttract() {
 
     calcComps();
 
-    double spfac = 1.7;
+    double spfac = 1.3;
     double spnow = 1;
     int i = start_i;
     for (int cycle = 0; cycle < numcycles; cycle++){
@@ -508,7 +508,7 @@ QVector3D Connections::computeDirectionalPotential(
         float lane_scaling = lane_width * seg_factor;
 
         // get a force which is reasonable and not a black force. other than that it is nice!
-        potential += lane_scaling * in_plane_dir * 2000000;
+        potential += lane_scaling * in_plane_dir * 2000;
     }
 
     return potential;
