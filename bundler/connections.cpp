@@ -167,7 +167,7 @@ void Connections::params() {
     smooth = 3;
     beta = 0.1;
     checkpoints = 0;
-    lane_width = 1.0f;
+    lane_width = 25.0f;
     directed = 0;
 }
 
@@ -238,7 +238,7 @@ void Connections::fullAttract() {
 
     calcComps();
 
-    double spfac = 1.3;
+    double spfac = 1.7;
     double spnow = 1;
     int i = start_i;
     for (int cycle = 0; cycle < numcycles; cycle++){
@@ -504,10 +504,11 @@ QVector3D Connections::computeDirectionalPotential(
 
         // Scale shift by local segment length and lane width
         double seg_length = (q_next - q_prev).length();
-        float seg_factor = qBound(0.01f, static_cast<float>(seg_length / 10.0f), 1.0f);
+        float seg_factor = qBound(0.01f, static_cast<float>(seg_length / 10), 1.0f);
         float lane_scaling = lane_width * seg_factor;
 
-        potential += lane_scaling * in_plane_dir;
+        // get a force which is reasonable and not a black force. other than that it is nice!
+        potential += lane_scaling * in_plane_dir * 2000000;
     }
 
     return potential;

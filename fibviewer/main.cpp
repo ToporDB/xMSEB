@@ -26,7 +26,8 @@ bool loadViewMatrixAndZoom(const QString& filename, double& zoom, QString& matri
     QVector<float> values;
     while (!in.atEnd()) {
         QString line = in.readLine();
-        for (const QString& numStr : line.split(QRegExp("\\s+"), Qt::SkipEmptyParts)) {
+        QStringList valueList = line.split(QRegExp("\\s+"), Qt::SkipEmptyParts);
+        for (const QString& numStr : qAsConst(valueList)) {
             values.append(numStr.toFloat());
         }
     }

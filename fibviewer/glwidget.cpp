@@ -174,7 +174,7 @@ void GLWidget::wheelEvent (QWheelEvent *event)
 
 void GLWidget::screenshot(QString name){
     qDebug() << "screenshot";
-    QPixmap map = this->renderPixmap(this->width(),this->height(),false);
+    QPixmap map = this->renderPixmap(this->width() * 2,this->height() * 2,false);
     QPainter p(&map);
     map.save(name);
 }
