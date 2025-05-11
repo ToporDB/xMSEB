@@ -14,12 +14,13 @@ public:
     void params();
     void subdivide();
     void subdivide(int newp);
-    void attract();
+    double attract();
 
     void fullAttract();
     void calcComps();
     float* comps;
-    float comp(int i, int j);
+    float* directions;
+    float comp(int i, int j) const;
     void writeVTK();
     void writeVTK(int, int);
     void writeBinaryVTK();
@@ -29,22 +30,22 @@ public:
     QString name(int, int);
     QVector3D computeDirectionalPotential(
         const QVector3D& q_j,
-        const QVector3D& q_prev,
-        const QVector3D& q_next,
-        const QVector3D& e_dir,
-        const QVector3D& q_dir,
-        QVector3D e_i
-        ) const;
-    std::pair<QVector3D, double> computeDirectedAttractionForce(
-        Edge* e, Edge* other, int i, const QVector3D& p,
-        const QVector3D& e_dir, float c
+        const QVector3D& e_i,
+        const QVector3D& Tj,
+        float directionFactor
         ) const;
 
+    // Computes attraction force for undirected edges
     std::pair<QVector3D, double> computeUndirectedAttractionForce(
-        Edge* e, Edge* other, int i, const QVector3D& p, float c
+        Edge* e, Edge* other, int i, int ei, int ej
         ) const;
 
-    double c_thr, bell, beta, lane_width;
+    // Computes attraction force for directed edges
+    std::pair<QVector3D, double> computeDirectedAttractionForce(
+        Edge* e, Edge* other, int i, int ei, int ej
+        ) const;
+
+    double c_thr, bell, beta, lane_width, lambda = 1e-4;
     int start_i, numcycles, smooth, checkpoints, directed;
     QString prefix;
 
