@@ -501,7 +501,7 @@ QVector3D Connections::computeDirectionalPotential(
 
         N_ij = N_ij.normalized();
 
-        potential = N_ij * lane_width;
+        potential = N_ij * lane_width * ((q_j - e_i).length() / 10);
     }
 
     return potential;
