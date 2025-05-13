@@ -32,7 +32,8 @@ public:
         const QVector3D& q_j,
         const QVector3D& e_i,
         const QVector3D& Tj,
-        float directionFactor
+        float directionFactor,
+        const QVector3D& e_dir
         ) const;
 
     // Computes attraction force for undirected edges

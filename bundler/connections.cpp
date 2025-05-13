@@ -29,9 +29,9 @@ Connections::Connections(QString nname, QString ename, QString fileName)
         QStringList vals = nl.split(" ", Qt::SkipEmptyParts);
         QVector3D* anode;
         //x,y,z
-        anode = new QVector3D(((QString)(vals.at(0))).toDouble(),
-                              ((QString)(vals.at(1))).toDouble(),
-                              ((QString)(vals.at(2))).toDouble());
+        anode = new QVector3D(((QString)(vals.at(0))).toDouble() * 10,
+                              ((QString)(vals.at(1))).toDouble() * 10,
+                              ((QString)(vals.at(2))).toDouble() * 10);
         // qDebug() << anode->x() << anode->y() << anode->z();
         nodes << *anode;
 
@@ -283,14 +283,14 @@ void Connections::calcComps(){
                 Edge* ei = edges.at(i);
                 Edge* ej = edges.at(j);
 
-                // Directionality: We don't want to bundle edges that point in the other directions
-                // TODO: Test it and see if it works (I don't think so)
-                if ((ei->fn == ej->tn && ei->tn == ej->fn)
-                    || (ei->startCluster == ej->endCluster && ei->endCluster == ej->startCluster && ei->startCluster != ei->endCluster)
-                    || (ei->fn == ej->fn && ei->tn == ej->tn && ei->startCluster != ej->startCluster && ei->endCluster != ej->endCluster)) { // More edge types supported
-                    comps[i+edges.size()*j] = 0;
-                    continue;
-                }
+                // // Directionality: We don't want to bundle edges that point in the other directions
+                // // TODO: Test it and see if it works (I don't think so)
+                // if ((ei->fn == ej->tn && ei->tn == ej->fn)
+                //     || (ei->startCluster == ej->endCluster && ei->endCluster == ej->startCluster && ei->startCluster != ei->endCluster)
+                //     || (ei->fn == ej->fn && ei->tn == ej->tn && ei->startCluster != ej->startCluster && ei->endCluster != ej->endCluster)) { // More edge types supported
+                //     comps[i+edges.size()*j] = 0;
+                //     continue;
+                // }
 
                 //calculate compatibility btw. edge i and j
                 //angle
@@ -488,20 +488,30 @@ QVector3D Connections::computeDirectionalPotential(
     const QVector3D& q_j,
     const QVector3D& e_i,
     const QVector3D& Tj,
-    float directionFactor
+    float directionFactor,
+    const QVector3D& e_dir
     ) const {
     QVector3D potential = q_j;
 
     if (directionFactor < 0) {
-        QVector3D V_ij = e_i - QVector3D::dotProduct((e_i - q_j), Tj) * Tj;
-        QVector3D N_ij = (V_ij - q_j);
+        // QVector3D V_ij = e_i - QVector3D::dotProduct((e_i - q_j), Tj) * Tj;
+        // QVector3D N_ij = (V_ij - q_j);
 
-        if (N_ij.lengthSquared() < 1e-6f)
-            N_ij = Tj;
+        // Compute a normal within the plane of the compared edge
+        // Use cross product of Tj and e_dir (more robust in 3D)
+        QVector3D Nj = QVector3D::crossProduct(Tj, e_dir);
+        if (Nj.lengthSquared() < 1e-6f)
+            return potential; // skip shift if directions are colinear
 
-        N_ij = N_ij.normalized();
+        Nj.normalize();
 
-        potential = N_ij * lane_width * ((q_j - e_i).length() / 10);
+        // Project Nj back into the plane of the edge to prevent drift
+        QVector3D P_normal = QVector3D::crossProduct(Tj, Nj).normalized();
+        QVector3D in_plane_dir = QVector3D::crossProduct(P_normal, Tj).normalized();
+
+        // get a force which is reasonable and not a black force. other than that it is nice!
+        potential += in_plane_dir * 2000;
+
     }
 
     return potential;
@@ -545,7 +555,9 @@ std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
     QVector3D e_i = e->points.at(i);
     float directionFactor = directions[ei + edges.length() * ej];
 
-    QVector3D potential = computeDirectionalPotential(q_j, e_i, Tj, directionFactor);
+    QVector3D e_dir = e->points.last() - e->points.first();
+
+    QVector3D potential = computeDirectionalPotential(q_j, e_i, Tj, directionFactor, e_dir);
     double weight = qExp(-(potential - p).lengthSquared() / (2 * bell * bell)) /
                     other->wt.toDouble() * std::pow(comp(ei, ej), 2);
 
