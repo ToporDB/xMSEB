@@ -28,7 +28,7 @@ void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, b
     if (n < 4) return;
 
     // Use spline interpolation
-    QList<QVector3D> interpolatedPoints = SplineUtils::interpolateCatmullRom(points, 4);
+    QList<QVector3D> interpolatedPoints = SplineUtils::interpolateCatmullRom(points, 5);
 
     int ipCount = interpolatedPoints.length();
     for (int i = 0; i < ipCount - 1; ++i) {
