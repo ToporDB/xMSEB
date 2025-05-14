@@ -1,4 +1,5 @@
 #include "edge.h"
+#include "SplineUtils.h"
 
 #include <QtDebug>
 
@@ -8,6 +9,7 @@ Edge::Edge(QVector3D fn, QVector3D tn)
     this->tn = tn;
     points << fn << tn;
 }
+
 
 void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, bool dualGradient) {
     if (startAndEndNodes) {
@@ -23,35 +25,36 @@ void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, b
     glPointSize(5);
 
     int n = points.length();
-    if (n < 2) return;
+    if (n < 4) return;
 
-    for (int i = 0; i < n - 1; ++i) {
-        QVector3D p1 = points.at(i);
-        QVector3D p2 = points.at(i + 1);
+    // Use spline interpolation
+    QList<QVector3D> interpolatedPoints = SplineUtils::interpolateCatmullRom(points, 4);
+
+    int ipCount = interpolatedPoints.length();
+    for (int i = 0; i < ipCount - 1; ++i) {
+        QVector3D p1 = interpolatedPoints[i];
+        QVector3D p2 = interpolatedPoints[i + 1];
 
         QVector3D nor = p1 - p2;
-
         QVector3D col1, col2;
 
         if (dualGradient) {
-            float t1 = float(i) / float(n - 1);
-            float t2 = float(i + 1) / float(n - 1);
+            float t1 = float(i) / float(ipCount - 1);
+            float t2 = float(i + 1) / float(ipCount - 1);
 
-            // Red → Black → Blue gradient
             auto gradient = [](float t) -> QVector3D {
                 if (t < 0.5f) {
-                    float f = t / 0.5f; // 0 to 1
-                    return QVector3D(1.0f * (1 - f), 0.0f, 0.0f); // Red to black
+                    float f = t / 0.5f;
+                    return QVector3D(1.0f * (1 - f), 0.0f, 0.0f);
                 } else {
-                    float f = (t - 0.5f) / 0.5f; // 0 to 1
-                    return QVector3D(0.0f, 0.0f, 1.0f * f); // Black to blue
+                    float f = (t - 0.5f) / 0.5f;
+                    return QVector3D(0.0f, 0.0f, 1.0f * f);
                 }
             };
 
             col1 = gradient(t1);
             col2 = gradient(t2);
         } else {
-            // Solid red
             col1 = col2 = QVector3D(1.0f, 0.0f, 0.0f);
         }
 

@@ -29,9 +29,9 @@ Connections::Connections(QString nname, QString ename, QString fileName)
         QStringList vals = nl.split(" ", Qt::SkipEmptyParts);
         QVector3D* anode;
         //x,y,z
-        anode = new QVector3D(((QString)(vals.at(0))).toDouble() * 10,
-                              ((QString)(vals.at(1))).toDouble() * 10,
-                              ((QString)(vals.at(2))).toDouble() * 10);
+        anode = new QVector3D(((QString)(vals.at(0))).toDouble(),
+                              ((QString)(vals.at(1))).toDouble(),
+                              ((QString)(vals.at(2))).toDouble());
         // qDebug() << anode->x() << anode->y() << anode->z();
         nodes << *anode;
 
@@ -283,14 +283,14 @@ void Connections::calcComps(){
                 Edge* ei = edges.at(i);
                 Edge* ej = edges.at(j);
 
-                // // Directionality: We don't want to bundle edges that point in the other directions
-                // // TODO: Test it and see if it works (I don't think so)
-                // if ((ei->fn == ej->tn && ei->tn == ej->fn)
-                //     || (ei->startCluster == ej->endCluster && ei->endCluster == ej->startCluster && ei->startCluster != ei->endCluster)
-                //     || (ei->fn == ej->fn && ei->tn == ej->tn && ei->startCluster != ej->startCluster && ei->endCluster != ej->endCluster)) { // More edge types supported
-                //     comps[i+edges.size()*j] = 0;
-                //     continue;
-                // }
+                // Directionality: We don't want to bundle edges that point in the other directions
+                // TODO: Test it and see if it works (I don't think so)
+                if ((ei->fn == ej->tn && ei->tn == ej->fn)
+                    || (ei->startCluster == ej->endCluster && ei->endCluster == ej->startCluster && ei->startCluster != ei->endCluster)
+                    || (ei->fn == ej->fn && ei->tn == ej->tn && ei->startCluster != ej->startCluster && ei->endCluster != ej->endCluster)) { // More edge types supported
+                    comps[i+edges.size()*j] = 0;
+                    continue;
+                }
 
                 //calculate compatibility btw. edge i and j
                 //angle
@@ -481,7 +481,8 @@ QString Connections::name(int current_start_i = -1, int current_numcycles = -1) 
     return prefix +
            "_c_thr" + QString::number(c_thr,'f',4) +
            "_numcycles" + QString("%1").arg(output_numcycles,2,10,QLatin1Char('0') ) +
-           "_start_i" + QString("%1").arg(output_start_i,4,10,QLatin1Char('0'));
+           "_start_i" + QString("%1").arg(output_start_i,4,10,QLatin1Char('0'))+
+           "_directed" + QString::number(directed);
 }
 
 QVector3D Connections::computeDirectionalPotential(
@@ -494,11 +495,6 @@ QVector3D Connections::computeDirectionalPotential(
     QVector3D potential = q_j;
 
     if (directionFactor < 0) {
-        // QVector3D V_ij = e_i - QVector3D::dotProduct((e_i - q_j), Tj) * Tj;
-        // QVector3D N_ij = (V_ij - q_j);
-
-        // Compute a normal within the plane of the compared edge
-        // Use cross product of Tj and e_dir (more robust in 3D)
         QVector3D Nj = QVector3D::crossProduct(Tj, e_dir);
         if (Nj.lengthSquared() < 1e-6f)
             return potential; // skip shift if directions are colinear
@@ -509,9 +505,9 @@ QVector3D Connections::computeDirectionalPotential(
         QVector3D P_normal = QVector3D::crossProduct(Tj, Nj).normalized();
         QVector3D in_plane_dir = QVector3D::crossProduct(P_normal, Tj).normalized();
 
-        // get a force which is reasonable and not a black force. other than that it is nice!
-        potential += in_plane_dir * 2000;
-
+        float lane_scaling = lane_width;
+        // get a force which is reasonable and not a black magic force. other than that it is nice!
+        potential = lane_scaling * in_plane_dir * 20000;
     }
 
     return potential;
@@ -540,12 +536,8 @@ std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
     QVector3D q_dir = (other->points.last() - other->points.first()).normalized();
 
     QVector3D q_prev, q_next;
-    if (i > 0 && i < other->points.length() - 1) {
-        q_prev = other->points.at(i - 1);
-        q_next = other->points.at(i + 1);
-    } else {
-        q_prev = q_next = q_j - q_dir;
-    }
+    q_prev = other->points.at(i - 1);
+    q_next = other->points.at(i + 1);
 
     QVector3D Tj = q_next - q_prev;
     if (Tj.lengthSquared() < 1e-6f)

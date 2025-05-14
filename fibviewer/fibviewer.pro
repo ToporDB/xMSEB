@@ -12,6 +12,7 @@ QMAKE_CXXFLAGS += -fopenmp
 LIBS += -fopenmp
 
 SOURCES += main.cpp\
+    SplineUtils.cpp \
         mainwindow.cpp \
     glwidget.cpp \
     connections.cpp \
@@ -21,6 +22,7 @@ SOURCES += main.cpp\
     artificialconnections.cpp
 
 HEADERS  += mainwindow.h \
+    SplineUtils.h \
     glwidget.h \
     connections.h \
     edge.h \

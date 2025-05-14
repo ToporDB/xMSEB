@@ -52,7 +52,7 @@ if [[ "$1" == *.fib ]]; then
     "$BUNDLER" -fib "$FIB_FILE" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES" -checkpoints 1 -directed 1
 
     # Move and run FibViewer on the output file
-    FIB_TXT_FILE="${FIB_FILE}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I").vtk"
+    FIB_TXT_FILE="${FIB_FILE}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I")_directed$DIRECTED.vtk"
 else
     # Case: Using -nodes and -cons
     if [ "$#" -lt 3 ]; then
@@ -68,7 +68,7 @@ else
     "$BUNDLER" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES" -checkpoints 1 -directed 1
 
     # Move and run FibViewer on the output file
-    FIB_TXT_FILE="${OUTPUT_FILENAME}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I").vtk"
+    FIB_TXT_FILE="${OUTPUT_FILENAME}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I")_directed$DIRECTED.vtk"
 fi
 
 
