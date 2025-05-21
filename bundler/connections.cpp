@@ -13,6 +13,17 @@
 #include <QFile>
 #include <QDataStream>
 
+Connections::~Connections() {
+    // Delete all dynamically allocated Edge objects
+    for (Edge* edge : qAsConst(edges)) {
+        delete edge;
+    }
+
+    // Free allocated memory for comps and directions
+    delete[] comps;
+    delete[] directions;
+}
+
 Connections::Connections(QString nname, QString ename, QString fileName)
 {
     params();
@@ -184,11 +195,14 @@ void Connections::subdivide(int newp) {
 double Connections::attract() {
     double totalMovement = 0.0;
 
-    #pragma omp parallel for reduction(+:totalMovement)
     for (int ie = 0; ie < edges.size(); ++ie) {
         Edge* e = edges.at(ie);
         double weightOfThisEdge = e->wt.toDouble();
+        QVector<QVector3D> newForces(e->points.length());  // Thread-local forces
 
+        double edgeMovement = 0.0;
+
+#pragma omp parallel for reduction(+:edgeMovement)
         for (int i = 1; i < e->points.length() - 1; ++i) {
             QVector3D p = e->points.at(i);
             double edgeDepthFactor = (-i * (i - e->points.length())) / std::pow(e->points.length() / 2.0, 2);
@@ -221,17 +235,23 @@ double Connections::attract() {
                 f /= fsum;
                 QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f - p) / weightOfThisEdge);
                 force += beta * e->forces.at(i);  // Momentum
+                newForces[i] = force;
 
-                // Accumulate the magnitude of movement
-                totalMovement += force.length();
-
-                e->forces.replace(i, force);
+                edgeMovement += force.length();
             }
         }
+
+        // Apply the computed forces sequentially
+        for (int i = 1; i < e->points.length() - 1; ++i) {
+            e->forces[i] = newForces[i];
+        }
+
+        totalMovement += edgeMovement;
     }
 
-    for (int e = 0; e < edges.size(); ++e) {
-        edges.at(e)->applyForces();
+    // Safe to apply forces now
+    for (Edge* e : qAsConst(edges)) {
+        e->applyForces();
     }
 
     return totalMovement;
@@ -240,9 +260,16 @@ double Connections::attract() {
 
 void Connections::fullAttract() {
     calcComps();
+    // for (int i = 0; i < edges.length(); ++i) {
+    //     for (int j = 0; j < edges.length(); ++j) {
+    //         qDebug() << "i: " << i << ", j: " << j << ", dot_product: " << directions[i + edges.length() * j] << Qt::endl;
+    //     }
+    // }
 
     double spfac = 1.3;
-    double spnow = 1;
+    // TODO: Change is back
+    // double spnow = 1;
+    double spnow = 3;
     int i = start_i;
     for (int cycle = 0; cycle < numcycles; cycle++){
         int sps = qRound(spnow);
@@ -278,7 +305,7 @@ void Connections::calcComps(){
     for (int i=0; i<edges.length(); i++){
         for (int j=0; j<edges.length(); j++){
             if (i==j) {
-                comps[i+edges.size()*j]=1;
+                comps[i+edges.size()*j]=0.0;
             } else {
                 Edge* ei = edges.at(i);
                 Edge* ej = edges.at(j);
@@ -303,7 +330,16 @@ void Connections::calcComps(){
                 angle_comp /= ei->length()*ej->length();
 
                 // New: Precalculate the directionality of two edges, so we can use it for diretionality if needed
-                if (directed) directions[i + edges.size() * j] = QVector3D::dotProduct(ei->points.last() - ei->points.first(), ej->points.last() - ej->points.first());
+                if (directed) directions[i + edges.size() * j] = QVector3D::dotProduct(
+                        (ei->points.last() - ei->points.first()).normalized(),
+                        (ej->points.last() - ej->points.first()).normalized()
+                    );
+
+                // TODO: If everything breaks.
+                // if (directions[i + edges.size() * j] < 0) {
+                //     comps[i+edges.size()*j] = 0.0f;
+                //     continue;
+                // }
 
                 //length
                 double lavg = (ei->length()+ej->length())/2.0;
@@ -500,14 +536,11 @@ QVector3D Connections::computeDirectionalPotential(
             return potential; // skip shift if directions are colinear
 
         Nj.normalize();
-
-        // Project Nj back into the plane of the edge to prevent drift
         QVector3D P_normal = QVector3D::crossProduct(Tj, Nj).normalized();
         QVector3D in_plane_dir = QVector3D::crossProduct(P_normal, Tj).normalized();
 
-        float lane_scaling = lane_width;
         // get a force which is reasonable and not a black magic force. other than that it is nice!
-        potential = lane_scaling * in_plane_dir * 20000;
+        potential = lane_width * in_plane_dir;// * 2000;
     }
 
     return potential;
@@ -530,27 +563,31 @@ std::pair<QVector3D, double> Connections::computeUndirectedAttractionForce(
 std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
     Edge* e, Edge* other, int i, int ei, int ej
     ) const {
-    QVector3D p = e->points.at(i);
-    QVector3D q_j = other->points.at(i);
+    float directionFactor = directions[ei + edges.length() * ej];
 
-    QVector3D q_dir = (other->points.last() - other->points.first()).normalized();
+    // Choose index based on direction
+    int other_i = (directionFactor < 0)
+                      ? other->points.length() - 1 - i
+                      : i;
 
-    QVector3D q_prev, q_next;
-    q_prev = other->points.at(i - 1);
-    q_next = other->points.at(i + 1);
+    // Clamp indices to avoid out-of-bounds
+    // other_i = std::clamp(other_i, 1, other->points.length() - 2);
+
+    QVector3D q_j = other->points.at(other_i);
+    QVector3D q_prev = other->points.at(other_i - 1);
+    QVector3D q_next = other->points.at(other_i + 1);
 
     QVector3D Tj = q_next - q_prev;
     if (Tj.lengthSquared() < 1e-6f)
-        Tj = q_dir;
+        Tj = (other->points.last() - other->points.first());
+
     Tj.normalize();
 
     QVector3D e_i = e->points.at(i);
-    float directionFactor = directions[ei + edges.length() * ej];
-
-    QVector3D e_dir = e->points.last() - e->points.first();
+    QVector3D e_dir = (e->points.at(i - 1) - e->points.at(i + 1)).normalized();
 
     QVector3D potential = computeDirectionalPotential(q_j, e_i, Tj, directionFactor, e_dir);
-    double weight = qExp(-(potential - p).lengthSquared() / (2 * bell * bell)) /
+    double weight = qExp(-(potential - e_i).lengthSquared() / (2 * bell * bell)) /
                     other->wt.toDouble() * std::pow(comp(ei, ej), 2);
 
     return {potential, weight};

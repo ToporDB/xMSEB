@@ -11,6 +11,7 @@ class Connections
 public:
     Connections(QString nname, QString ename, QString fileName);
     Connections(QString fib);
+    ~Connections();
     void params();
     void subdivide();
     void subdivide(int newp);
