@@ -16,7 +16,7 @@ public:
     void subdivide();
     void subdivide(int newp);
     double attract();
-
+    void addLateralForce();
     void fullAttract();
     void calcComps();
     float* comps;
@@ -29,13 +29,6 @@ public:
     void writeSegments();
     QString name();
     QString name(int, int);
-    QVector3D computeDirectionalPotential(
-        const QVector3D& q_j,
-        const QVector3D& e_i,
-        const QVector3D& Tj,
-        float directionFactor,
-        const QVector3D& e_dir
-        ) const;
 
     // Computes attraction force for undirected edges
     std::pair<QVector3D, double> computeUndirectedAttractionForce(
