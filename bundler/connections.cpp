@@ -530,17 +530,13 @@ QVector3D Connections::computeDirectionalPotential(
     ) const {
     QVector3D potential = q_j;
 
+
+    // TODO: Or maybe look at the small Ti and Tj's cross product, could be better.
     if (directionFactor < 0) {
-        QVector3D Nj = QVector3D::crossProduct(Tj, e_dir);
-        if (Nj.lengthSquared() < 1e-6f)
-            return potential; // skip shift if directions are colinear
+        QVector3D up(0, 1, 0);
+        QVector3D Nj = QVector3D::crossProduct(Tj, up).normalized();
 
-        Nj.normalize();
-        QVector3D P_normal = QVector3D::crossProduct(Tj, Nj).normalized();
-        QVector3D in_plane_dir = QVector3D::crossProduct(P_normal, Tj).normalized();
-
-        // get a force which is reasonable and not a black magic force. other than that it is nice!
-        potential = lane_width * in_plane_dir;// * 2000;
+        potential += lane_width * Nj * ((q_j - e_i).length() / 2);
     }
 
     return potential;
