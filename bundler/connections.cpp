@@ -279,6 +279,7 @@ void Connections::fullAttract() {
 
     if (directed) {
         addLateralForce();
+        attract();
     }
 
     // for further subdivision without attraction
@@ -304,7 +305,7 @@ void Connections::addLateralForce() {
             double fsum = 0;
             QVector3D f(0, 0, 0);
 
-            for (int ej = 0; ej < edges.length(); ++ej) {
+            for (int ej = ei + 1; ej < edges.length(); ++ej) {
                 float c = comp(ei, ej);
                 if (c < c_thr) continue;
 
@@ -573,7 +574,7 @@ std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
     QVector3D q_j = other->points.at(other_i);
     QVector3D p_i = e->points.at(i);
 
-    if (((p_i - q_j).length() > lane_width / ((e->length() + other->length()) / 2)) || directionFactor >= 0) {
+    if (directionFactor >= 0 || ((p_i - q_j).length() > lane_width / ((e->length() + other->length()) / 2) / 100)) {
         return {QVector3D(), 0.0f};
     }
 
@@ -590,7 +591,10 @@ std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
     QVector3D N_ij = V_ij - q_j;
     N_ij = N_ij.normalized();
 
-    QVector3D potential = lane_width * N_ij* ((q_j - p_i).length() / 2);
+    QVector3D up(0, 1, 0);
+    QVector3D Nj = QVector3D::crossProduct(Tj, up).normalized();
+
+    QVector3D potential = p_i + Nj * lane_width * (((e->length() + other->length()) / 2) / 100);
 
     double weight = qExp(-(potential - p_i).lengthSquared() / (2 * bell * bell)) /
                     other->wt.toDouble() * std::pow(comp(ei, ej), 2);
