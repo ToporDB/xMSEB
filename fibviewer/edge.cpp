@@ -25,37 +25,42 @@ void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, b
     glPointSize(5);
 
     int n = points.length();
-    if (n < 4) return;
+    if (n < 2) return; // not enough to draw anything
 
-    // Use spline interpolation
-    QList<QVector3D> interpolatedPoints = SplineUtils::interpolateCatmullRom(points, 5);
+    QList<QVector3D> drawPoints;
 
-    int ipCount = interpolatedPoints.length();
-    for (int i = 0; i < ipCount - 1; ++i) {
-        QVector3D p1 = interpolatedPoints[i];
-        QVector3D p2 = interpolatedPoints[i + 1];
+    if (n < 4) {
+        drawPoints = points; // Use original points
+    } else {
+        drawPoints = SplineUtils::interpolateCatmullRom(points, 5);
+    }
+
+    int count = drawPoints.length();
+    for (int i = 0; i < count - 1; ++i) {
+        QVector3D p1 = drawPoints[i];
+        QVector3D p2 = drawPoints[i + 1];
 
         QVector3D nor = p1 - p2;
         QVector3D col1, col2;
 
         if (dualGradient) {
-            float t1 = float(i) / float(ipCount - 1);
-            float t2 = float(i + 1) / float(ipCount - 1);
+            float t1 = float(i) / float(count - 1);
+            float t2 = float(i + 1) / float(count - 1);
 
             auto gradient = [](float t) -> QVector3D {
                 if (t < 0.5f) {
                     float f = t / 0.5f;
-                    return QVector3D(1.0f * (1 - f), 0.0f, 0.0f);
+                    return QVector3D(1.0f * (1 - f), 0.0f, 0.0f); // Red to black
                 } else {
                     float f = (t - 0.5f) / 0.5f;
-                    return QVector3D(0.0f, 0.0f, 1.0f * f);
+                    return QVector3D(0.0f, 0.0f, 1.0f * f); // Black to blue
                 }
             };
 
             col1 = gradient(t1);
             col2 = gradient(t2);
         } else {
-            col1 = col2 = QVector3D(1.0f, 0.0f, 0.0f);
+            col1 = col2 = QVector3D(1.0f, 0.0f, 0.0f); // Solid red
         }
 
         glBegin(GL_LINES);
@@ -76,7 +81,6 @@ void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, b
         }
     }
 }
-
 void Edge::glVertex(QVector3D v){
     glVertex3f(v.x(),v.y(),v.z());
 }
