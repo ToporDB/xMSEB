@@ -591,7 +591,7 @@ std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
     QVector3D up(0, 1, 0);
     QVector3D Nj = QVector3D::crossProduct(Tj, up).normalized();
 
-    QVector3D potential = p_i + Nj * lane_width * (((e->length() + other->length()) / 2) / 50);
+    QVector3D potential = q_j + Nj * lane_width * (((e->length() + other->length()) / 2) / 50);
 
     double weight = qExp(-(potential - p_i).lengthSquared() / (2 * bell * bell)) /
                     other->wt.toDouble() * std::pow(comp(ei, ej), 2);
