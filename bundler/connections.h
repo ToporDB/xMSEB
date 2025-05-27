@@ -16,7 +16,7 @@ public:
     void subdivide();
     void subdivide(int newp);
     double attract();
-    void addLateralForce();
+    void addLateralForces();
     void fullAttract();
     void calcComps();
     float* comps;

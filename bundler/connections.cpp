@@ -278,7 +278,7 @@ void Connections::fullAttract() {
     }
 
     if (directed) {
-        addLateralForce();
+        addLateralForces();
 
         for (int i = 0; i < start_i; ++i) {
             attract();
@@ -294,7 +294,7 @@ void Connections::fullAttract() {
     }
 }
 
-void Connections::addLateralForce() {
+void Connections::addLateralForces() {
     for (int ei = 0; ei < edges.length(); ++ei) {
         Edge* p = edges.at(ei);
         double weightOfThisEdge = p->wt.toDouble();
