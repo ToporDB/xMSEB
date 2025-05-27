@@ -180,6 +180,7 @@ void Connections::params() {
     checkpoints = 0;
     lane_width = 1.0f;
     directed = 0;
+    lambda = 1e-4;
 }
 
 void Connections::subdivide(int newp) {
@@ -279,10 +280,7 @@ void Connections::fullAttract() {
 
     if (directed) {
         addLateralForces();
-
-        for (int i = 0; i < start_i; ++i) {
-            attract();
-        }
+        for (int i = 0; i < start_i; ++i) attract();
     }
 
     // for further subdivision without attraction
@@ -310,7 +308,8 @@ void Connections::addLateralForces() {
 
             for (int ej = ei + 1; ej < edges.length(); ++ej) {
                 float c = comp(ei, ej);
-                if (c < c_thr) continue;
+
+                if (c < c_thr || directions[ei + edges.size() * ej] >= 0) continue;
 
                 Edge* q = edges.at(ej);
 
@@ -567,33 +566,28 @@ std::pair<QVector3D, double> Connections::computeUndirectedAttractionForce(
 std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
     Edge* e, Edge* other, int i, int ei, int ej
     ) const {
-    float directionFactor = directions[ei + edges.length() * ej];
-
-    // Choose index based on direction
-    int other_i = (directionFactor < 0)
-                      ? other->points.length() - 1 - i
-                      : i;
+    int other_i = other->points.length() - 1 - i;
 
     QVector3D q_j = other->points.at(other_i);
     QVector3D p_i = e->points.at(i);
 
-    if (directionFactor >= 0 || ((p_i - q_j).length() > lane_width * ((e->length() + other->length()) / 2) / 50)) {
+    if (((p_i - q_j).length() > lane_width * ((e->length() + other->length()) / 2) / 50)) {
         return {QVector3D(), 0.0f};
     }
 
-    QVector3D q_prev = other->points.at(other_i - 1);
-    QVector3D q_next = other->points.at(other_i + 1);
+    QVector3D q_prev = other->points.at(other_i + 1);
+    QVector3D q_next = other->points.at(other_i - 1);
 
-    QVector3D Tj = q_next - q_prev;
-    if (Tj.lengthSquared() < 1e-6f)
-        Tj = (other->points.last() - other->points.first());
+    QVector3D T_j = q_next - q_prev;
+    if (T_j.lengthSquared() < 1e-6f)
+        T_j = (other->points.last() - other->points.first());
 
-    Tj.normalize();
+    T_j.normalize();
 
     QVector3D up(0, 1, 0);
-    QVector3D Nj = QVector3D::crossProduct(Tj, up).normalized();
+    QVector3D N_j = QVector3D::crossProduct(T_j, up).normalized();
 
-    QVector3D potential = q_j + Nj * lane_width * (((e->length() + other->length()) / 2) / 50);
+    QVector3D potential = q_j + N_j * lane_width * (((e->length() + other->length()) / 2) / 50);
 
     double weight = qExp(-(potential - p_i).lengthSquared() / (2 * bell * bell)) /
                     other->wt.toDouble() * std::pow(comp(ei, ej), 2);

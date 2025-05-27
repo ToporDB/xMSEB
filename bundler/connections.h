@@ -40,7 +40,7 @@ public:
         Edge* e, Edge* other, int i, int ei, int ej
         ) const;
 
-    double c_thr, bell, beta, lane_width, lambda = 1e-4;
+    double c_thr, bell, beta, lane_width, lambda;
     int start_i, numcycles, smooth, checkpoints, directed;
     QString prefix;
 
