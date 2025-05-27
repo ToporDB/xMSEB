@@ -227,12 +227,14 @@ double Connections::attract() {
                 f += weight * potential;
             }
 
-            f /= fsum;
-            QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f - p) / weightOfThisEdge);
-            force += beta * e->forces.at(i);  // Momentum
-            newForces[i] = force;
+            if (fsum > 0) {
+                f /= fsum;
+                QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f - p) / weightOfThisEdge);
+                force += beta * e->forces.at(i);  // Momentum
+                newForces[i] = force;
 
-            edgeMovement += force.length();
+                edgeMovement += force.length();
+            }
         }
 
         // Apply the computed forces sequentially
