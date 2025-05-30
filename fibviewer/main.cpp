@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     MainWindow w;
-    w.setWindowTitle("Fibviewer");
+    w.setWindowTitle(qApp->arguments().value(1,""));
 
     // Check if -viewmatrix is passed
     QString viewMatrixFile = arg("viewmatrix");

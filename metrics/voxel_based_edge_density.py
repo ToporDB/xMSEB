@@ -163,23 +163,27 @@ def compute_overplotted_percentage(voxel_edges):
     return 100 * len(overplotted_voxels) / len(used_voxels) if used_voxels else 0
 
 
-def compute_overcrowded_percentage(
-    edges, total_edges, nodes: list[list[float, float, float]]
-):
-    """Computes the percentage of edges that are bundled — i.e., share at least one intermediate node with another edge."""
+def quantize_point(point, precision=3):
+    """Rounds the point to the given decimal precision (default: 3 = 0.001 resolution)."""
+    return tuple(np.round(point, decimals=precision))
 
+def compute_overcrowded_percentage(edges, total_edges, nodes: list[list[float, float, float]], precision=2):
+    """
+    Computes the percentage of edges that are bundled.
+    Bundling means sharing at least one intermediate node (rounded to 0.001 by default) with another edge.
+    """
     point_to_edges = defaultdict(set)
 
-    # Step 1: Build map of interior (non-endpoint) points to edges
+    # Step 1: Build map of quantized interior points → edge indices
     for edge_idx, edge in enumerate(edges):
         if len(edge) <= 2:
-            continue  # no interior points to consider
+            continue
 
         for node_idx in edge[1:-1]:  # skip first and last
-            point = tuple(nodes[node_idx])
+            point = quantize_point(nodes[node_idx], precision)
             point_to_edges[point].add(edge_idx)
 
-    # Step 2: Check for bundling based on shared interior points
+    # Step 2: Identify bundled edges
     bundled_edges = set()
 
     for edge_idx, edge in enumerate(edges):
@@ -187,10 +191,10 @@ def compute_overcrowded_percentage(
             continue
 
         for node_idx in edge[1:-1]:
-            point = tuple(nodes[node_idx])
+            point = quantize_point(nodes[node_idx], precision)
             if len(point_to_edges[point]) > 1:
                 bundled_edges.add(edge_idx)
-                break  # one shared point is enough to count as bundled
+                break
 
     return 100 * len(bundled_edges) / total_edges if total_edges else 0
 
