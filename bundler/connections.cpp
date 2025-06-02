@@ -181,6 +181,7 @@ void Connections::params() {
     lane_width = 1.0f;
     directed = 0;
     lambda = 1e-4;
+    bundles = 0;
 }
 
 void Connections::subdivide(int newp) {
@@ -199,7 +200,6 @@ double Connections::attract() {
     for (int ie = 0; ie < edges.size(); ++ie) {
         Edge* e = edges.at(ie);
         double weightOfThisEdge = e->wt.toDouble();
-        QVector<QVector3D> newForces(e->points.length());  // Thread-local forces
 
         double edgeMovement = 0.0;
 
@@ -232,15 +232,9 @@ double Connections::attract() {
                 f /= fsum;
                 QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f - p) / weightOfThisEdge);
                 force += beta * e->forces.at(i);  // Momentum
-                newForces[i] = force;
-
+                e->forces[i] = force;
                 edgeMovement += force.length();
             }
-        }
-
-        // Apply the computed forces sequentially
-        for (int i = 1; i < e->points.length() - 1; ++i) {
-            e->forces[i] = newForces[i];
         }
 
         totalMovement += edgeMovement;
@@ -296,7 +290,6 @@ void Connections::addLateralForces() {
     for (int ei = 0; ei < edges.length(); ++ei) {
         Edge* p = edges.at(ei);
         double weightOfThisEdge = p->wt.toDouble();
-        QVector<QVector3D> newForces(p->points.length());
 
 
 #pragma omp parallel for
@@ -325,13 +318,8 @@ void Connections::addLateralForces() {
             if (fsum > 0) {
                 f /= fsum;
                 QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f - p_i) / weightOfThisEdge);
-                newForces[i] = force;
+                p->forces[i] = force;
             }
-        }
-
-        // Apply the computed forces sequentially
-        for (int i = 1; i < p->points.length() - 1; ++i) {
-            p->forces[i] = newForces[i];
         }
     }
 
@@ -511,6 +499,75 @@ void Connections::writeBinaryVTK(QString name){
 
     file.close();
 
+}
+
+auto sign = [](float x) {
+    return (x >= 0) ? 1 : -1;
+};
+
+void Connections::writeBundles() {
+    qDebug() << "writing edge bundles file";
+
+    QFile file(prefix + "_edge_bundles.txt");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qWarning() << "Failed to open output file";
+        return;
+    }
+
+    QTextStream out(&file);
+
+    int n = edges.size();
+    float threshold = 0.1f;
+
+    // Track which edges are already part of a bundle
+    QVector<bool> edgeBundled(n, false);
+    int bundle_id = 0;
+
+    auto sign = [](float x) { return (x >= 0) ? 1 : -1; };
+
+    for (int i = 0; i < n; ++i) {
+        if (edgeBundled[i]) continue;
+
+        QList<int> bundle_edges;
+        float total_weight = 0.0f;
+        float dir_sign = 1.0f;
+
+        if (directed) {
+            for (int j = 0; j < n; ++j) {
+                if (i == j) continue;
+                float c = comp(i, j);
+                if (c >= threshold) {
+                    dir_sign = sign(directions[i * n + j]);
+                    break;
+                }
+            }
+        }
+
+        for (int k = 0; k < n; ++k) {
+            if (edgeBundled[k]) continue;
+            float ck = comp(i, k);
+            float dk = directed ? directions[i * n + k] : 1.0f;
+
+            if (ck >= threshold && (!directed || sign(dk) == dir_sign)) {
+                bundle_edges.append(k);
+                edgeBundled[k] = true;
+                total_weight += ck;
+            }
+        }
+
+        if (bundle_edges.size() <= 1) continue;
+
+        QString label = (dir_sign > 0) ? "forward" : "reverse";
+        out << "Bundle " << bundle_id++ << " (" << label << "):\n";
+        out << "  Edges: ";
+        for (int idx : bundle_edges)
+            out << idx << " ";
+        out << "\n";
+        out << "  Total Weight: " << total_weight << "\n\n";
+    }
+
+    file.close();
+    qDebug() << "file written";
 }
 
 

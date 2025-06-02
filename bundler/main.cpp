@@ -25,7 +25,8 @@ int main(int argc, char *argv[])
                     "[-start_i <iterations in 1st cycle>] "
                     "[-numcycles <number of cycles>] "
                     "[-checkpoints <0 or 1>, default is 0] "
-                    "[-directed <0 or 1>, default is 0]";
+                    "[-directed <0 or 1>, default is 0] "
+                    "[-bundles <0 or 1>, default is 0]";
             return 1;
     }
 
@@ -50,11 +51,14 @@ int main(int argc, char *argv[])
     if (arg("smooth")!="") cons->smooth = arg("smooth").toInt();
     if (arg("checkpoints")!="") cons->checkpoints = arg("checkpoints").toInt();
     if (arg("directed")!="") cons->directed = arg("directed").toInt();
+    if (arg("bundles")!="") cons->bundles = arg("bundles").toInt();
 
     qDebug() << cons->name();
 
     cons->fullAttract();
     cons->writeVTK();
+
+    if (cons->bundles) cons->writeBundles();
 
     // if (arg("out")!="") {
     //     // cons->writeBinaryVTK(arg("out"));

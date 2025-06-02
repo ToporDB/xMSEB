@@ -27,6 +27,7 @@ public:
     void writeBinaryVTK();
     void writeBinaryVTK(QString name);
     void writeSegments();
+    void writeBundles();
     QString name();
     QString name(int, int);
 
@@ -41,7 +42,7 @@ public:
         ) const;
 
     double c_thr, bell, beta, lane_width, lambda;
-    int start_i, numcycles, smooth, checkpoints, directed;
+    int start_i, numcycles, smooth, checkpoints, directed, bundles;
     QString prefix;
 
 private:
