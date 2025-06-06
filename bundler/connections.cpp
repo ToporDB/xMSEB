@@ -176,7 +176,7 @@ void Connections::params() {
     numcycles = 10;
     bell = 5;
     smooth = 3;
-    beta = 0.1;
+    beta = 0.65f;
     checkpoints = 0;
     lane_width = 1.0f;
     directed = 0;
@@ -196,14 +196,12 @@ void Connections::subdivide(int newp) {
 
 double Connections::attract() {
     double totalMovement = 0.0;
-
+    #pragma omp parallel for reduction(+:totalMovement)
     for (int ie = 0; ie < edges.size(); ++ie) {
         Edge* e = edges.at(ie);
         double weightOfThisEdge = e->wt.toDouble();
 
-        double edgeMovement = 0.0;
-
-#pragma omp parallel for reduction(+:edgeMovement)
+        
         for (int i = 1; i < e->points.length() - 1; ++i) {
             QVector3D p = e->points.at(i);
             double edgeDepthFactor = (-i * (i - e->points.length())) / std::pow(e->points.length() / 2.0, 2);
@@ -233,11 +231,9 @@ double Connections::attract() {
                 QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f - p) / weightOfThisEdge);
                 force += beta * e->forces.at(i);  // Momentum
                 e->forces[i] = force;
-                edgeMovement += force.length();
+                totalMovement += force.length();
             }
         }
-
-        totalMovement += edgeMovement;
     }
 
     // Safe to apply forces now
@@ -287,12 +283,12 @@ void Connections::fullAttract() {
 }
 
 void Connections::addLateralForces() {
+#pragma omp parallel for
     for (int ei = 0; ei < edges.length(); ++ei) {
         Edge* p = edges.at(ei);
         double weightOfThisEdge = p->wt.toDouble();
 
 
-#pragma omp parallel for
         for (int i = 1; i < p->points.length() - 1; ++i) {
             QVector3D p_i = p->points.at(i);
             double edgeDepthFactor = (-i * (i - p->points.length())) / std::pow(p->points.length() / 2.0, 2);
@@ -501,10 +497,6 @@ void Connections::writeBinaryVTK(QString name){
 
 }
 
-auto sign = [](float x) {
-    return (x >= 0) ? 1 : -1;
-};
-
 void Connections::writeBundles() {
     qDebug() << "writing edge bundles file";
 
@@ -607,7 +599,7 @@ QString Connections::name(int current_start_i = -1, int current_numcycles = -1) 
 }
 
 std::pair<QVector3D, double> Connections::computeUndirectedAttractionForce(
-    Edge* e, Edge* other, int i, int ei, int ej
+    Edge* e, Edge* other, int &i, int &ei, int &ej
     ) const {
     QVector3D p = e->points.at(i);
     QVector3D pe = other->flip(e)
@@ -621,7 +613,7 @@ std::pair<QVector3D, double> Connections::computeUndirectedAttractionForce(
 }
 
 std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
-    Edge* e, Edge* other, int i, int ei, int ej
+    Edge* e, Edge* other, int &i, int &ei, int &ej
     ) const {
     int other_i = other->points.length() - 1 - i;
 
