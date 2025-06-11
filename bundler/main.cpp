@@ -60,13 +60,6 @@ int main(int argc, char *argv[])
 
     if (cons->bundles) cons->writeBundles();
 
-    // if (arg("out")!="") {
-    //     // cons->writeBinaryVTK(arg("out"));
-    //     cons->writeVTK();
-    // } else {
-    //     // cons->writeBinaryVTK();
-    // }
-
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
     qDebug() << "Execution time: " << duration.count() << " ms";

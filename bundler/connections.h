@@ -41,7 +41,7 @@ public:
         Edge* e, Edge* other, int &i, int &ei, int &ej
         ) const;
 
-    double c_thr, bell, beta, lane_width, lambda;
+    double c_thr, bell, beta, lane_width, lambda, polynomial;
     int start_i, numcycles, smooth, checkpoints, directed, bundles;
     QString prefix;
 

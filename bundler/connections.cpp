@@ -182,6 +182,7 @@ void Connections::params() {
     directed = 0;
     lambda = 1e-4;
     bundles = 0;
+    polynomial = 1.0;
 }
 
 void Connections::subdivide(int newp) {
@@ -200,11 +201,10 @@ double Connections::attract() {
     for (int ie = 0; ie < edges.size(); ++ie) {
         Edge* e = edges.at(ie);
         double weightOfThisEdge = e->wt.toDouble();
-
         
         for (int i = 1; i < e->points.length() - 1; ++i) {
             QVector3D p = e->points.at(i);
-            double edgeDepthFactor = (-i * (i - e->points.length())) / std::pow(e->points.length() / 2.0, 2);
+            double edgeDepthFactor = std::pow((4 * i * (e->points.length() - i)) / std::pow(e->points.length(), 2), polynomial);
             double fsum = 0;
             QVector3D f(0, 0, 0);
 
@@ -593,7 +593,7 @@ QString Connections::name(int current_start_i = -1, int current_numcycles = -1) 
     int output_numcycles = current_numcycles != -1 ? current_numcycles : numcycles;
     return prefix +
            "_c_thr" + QString::number(c_thr,'f',4) +
-           "_numcycles" + QString("%1").arg(output_numcycles,2,10,QLatin1Char('0') ) +
+           "_numcycles" + QString("%1").arg(output_numcycles,2,10,QLatin1Char('0')) +
            "_start_i" + QString("%1").arg(output_start_i,4,10,QLatin1Char('0'))+
            "_directed" + QString::number(directed);
 }
