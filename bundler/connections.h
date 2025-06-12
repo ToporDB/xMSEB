@@ -31,12 +31,10 @@ public:
     QString name();
     QString name(int, int);
 
-    // Computes attraction force for undirected edges
     std::pair<QVector3D, double> computeUndirectedAttractionForce(
         Edge* e, Edge* other, int &i, int &ei, int &ej
         ) const;
 
-    // Computes attraction force for directed edges
     std::pair<QVector3D, double> computeDirectedAttractionForce(
         Edge* e, Edge* other, int &i, int &ei, int &ej
         ) const;

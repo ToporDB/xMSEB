@@ -31,7 +31,7 @@ void MainWindow::updateCameraValues(GLfloat* position) {
         matrixText += '\n';
     }
 
-    ui->matrixValue->setText(matrixText.trimmed()); // Trim to remove trailing space
+    ui->matrixValue->setText(matrixText.trimmed());
 }
 
 void MainWindow::updateCameraZoom(double zoom) {
@@ -42,10 +42,9 @@ void MainWindow::onZoomValueChanged() {
     QString value = ui->zoomValue->text();
 
     bool ok;
-    double zoom = value.toDouble(&ok); // Convert text to double
+    double zoom = value.toDouble(&ok);
 
     if (ok) {
-        // If you need to send the zoom value to GLWidget
         ui->widget->setZoomLevel(zoom);
     } else {
         qDebug() << "Invalid zoom value!";
@@ -53,8 +52,8 @@ void MainWindow::onZoomValueChanged() {
 }
 
 void MainWindow::onMatrixValueChanged() {
-    GLfloat newMatrix[16]; // Array to store parsed values
-    if (setMatrixFromUI(newMatrix)) { // Parse the values from UI
+    GLfloat newMatrix[16];
+    if (setMatrixFromUI(newMatrix)) {
         ui->widget->updateViewMatrix(newMatrix);
     }
 }
