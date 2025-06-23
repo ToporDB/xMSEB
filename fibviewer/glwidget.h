@@ -52,7 +52,7 @@ public:
     GLWidget(QWidget *parent = 0);
     ~GLWidget();
 signals:
-    void cameraUpdated(GLfloat* position);  // Signal for position & zoom
+    void cameraUpdated(GLfloat* position);
     void cameraUpdatedZoom(double zoom);
 protected:
     QString arg(QString argname);

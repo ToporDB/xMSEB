@@ -97,7 +97,9 @@ Connections::Connections(QString nname, QString ename, QString fileName)
 Connections::Connections(QString fib){
     //TODO: Das hier so umbiegen, dass ich Gabys Daten laden kann...
     params();
-    prefix = fib;
+    QStringList longName = fib.split('/');
+
+    prefix = longName[longName.length() - 1];
     QFile n(fib);
 
     if (!n.open(QIODevice::ReadOnly)) {
