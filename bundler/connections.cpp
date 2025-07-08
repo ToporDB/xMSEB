@@ -247,7 +247,7 @@ void Connections::fullAttract() {
     calcComps();
 
     double spfac = 1.3;
-    double spnow = 1;
+    double spnow = 2.028;
     int i = start_i;
     for (int cycle = 0; cycle < numcycles; cycle++){
         int sps = qRound(spnow);
