@@ -181,7 +181,7 @@ void Connections::params() {
     directed = 0;
     lambda = 1e-4;
     bundles = 0;
-    polynomial = 1.0;
+    poly_deg = 1.0;
 }
 
 void Connections::subdivide(int newp) {
@@ -278,12 +278,6 @@ void Connections::fullAttract() {
             qDebug() << "Number of subdivision points:" << qRound(spnow) + i;
         }
     }
-
-    int totalWhiplashes = 0;
-    for (Edge* e : edges) {
-        totalWhiplashes += countWhiplashForEdge(e);
-    }
-    qDebug() << "Total edges with whiplash:" << totalWhiplashes << "; Having poly_deg: " << poly_deg;
 }
 
 void Connections::addLateralForces() {
@@ -645,37 +639,3 @@ std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
 
     return {potential, weight};
 }
-
-int Connections::countWhiplashForEdge(Edge* e) const {
-    const QVector3D& from = e->points.first();
-    const QVector3D& to = e->points.last();
-    QVector3D normal = (to - from).normalized();
-
-    int whiplashCount = 0;
-
-    // Sign of the dot product for the first intermediate point
-    float initialSign = 0.0f;
-    bool signSet = false;
-
-    for (int i = 1; i < e->points.length() - 1; ++i) {
-        QVector3D point = e->points.at(i);
-        QVector3D vecFromPlane = point - from;
-
-        float dot = QVector3D::dotProduct(vecFromPlane, normal);
-
-        if (!signSet) {
-            initialSign = dot;
-            signSet = true;
-        } else {
-            // Check if current dot product has a different sign than the initial
-            if ((initialSign > 0 && dot < 0) || (initialSign < 0 && dot > 0)) {
-                whiplashCount++;
-                // Optional: break early if you only care whether it happens
-                // break;
-            }
-        }
-    }
-
-    return whiplashCount;
-}
-
