@@ -203,7 +203,7 @@ double Connections::attract() {
         
         for (int i = 1; i < e->points.length() - 1; ++i) {
             QVector3D p = e->points.at(i);
-            double edgeDepthFactor = std::pow((4 * i * (e->points.length() - i)) / std::pow(e->points.length(), 2), polynomial);
+            double edgeDepthFactor = std::pow((4 * i * (e->points.length() - i)) / std::pow(e->points.length(), 2), poly_deg);
             double fsum = 0;
             QVector3D f(0, 0, 0);
 
@@ -278,6 +278,12 @@ void Connections::fullAttract() {
             qDebug() << "Number of subdivision points:" << qRound(spnow) + i;
         }
     }
+
+    int totalWhiplashes = 0;
+    for (Edge* e : edges) {
+        totalWhiplashes += countWhiplashForEdge(e);
+    }
+    qDebug() << "Total edges with whiplash:" << totalWhiplashes << "; Having poly_deg: " << poly_deg;
 }
 
 void Connections::addLateralForces() {
@@ -603,7 +609,7 @@ std::pair<QVector3D, double> Connections::computeUndirectedAttractionForce(
                        : other->points.at(other->points.length() - 1 - i);
 
     double weight = qExp(-(pe - p).lengthSquared() / (2 * bell * bell)) /
-                    other->wt.toDouble() * std::pow(comp(ei, ej), 2);
+                    other->wt.toDouble(); // * std::pow(comp(ei, ej), 2);
 
     return {pe, weight};
 }
@@ -635,7 +641,41 @@ std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
     QVector3D potential = q_j + N_j * lane_width * (((e->length() + other->length()) / 2) / 50);
 
     double weight = qExp(-(potential - p_i).lengthSquared() / (2 * bell * bell)) /
-                    other->wt.toDouble() * std::pow(comp(ei, ej), 2);
+                    other->wt.toDouble(); // * std::pow(comp(ei, ej), 2);
 
     return {potential, weight};
 }
+
+int Connections::countWhiplashForEdge(Edge* e) const {
+    const QVector3D& from = e->points.first();
+    const QVector3D& to = e->points.last();
+    QVector3D normal = (to - from).normalized();
+
+    int whiplashCount = 0;
+
+    // Sign of the dot product for the first intermediate point
+    float initialSign = 0.0f;
+    bool signSet = false;
+
+    for (int i = 1; i < e->points.length() - 1; ++i) {
+        QVector3D point = e->points.at(i);
+        QVector3D vecFromPlane = point - from;
+
+        float dot = QVector3D::dotProduct(vecFromPlane, normal);
+
+        if (!signSet) {
+            initialSign = dot;
+            signSet = true;
+        } else {
+            // Check if current dot product has a different sign than the initial
+            if ((initialSign > 0 && dot < 0) || (initialSign < 0 && dot > 0)) {
+                whiplashCount++;
+                // Optional: break early if you only care whether it happens
+                // break;
+            }
+        }
+    }
+
+    return whiplashCount;
+}
+

@@ -7,14 +7,15 @@ if [ "$#" -lt 1 ]; then
 fi
 
 # Assign parameters with defaults
-C_THR="${4:-0.9}"
-START_I="${5:-10}"
-NUMCYCLES="${6:-10}"
+C_THR="${4:-0.8}"
+START_I="${5:-15}"
+NUMCYCLES="${6:-7}"
 BELL="${7:-5}"
-DIRECTED="${8:-1}"
+DIRECTED="${8:-0}"
 
 # Define paths
 BUNDLER="./bundler/build/Desktop-Debug/bundler"
+BUNDLER_MSEB="./bundler/build/Desktop-Debug/MSEB_bundler"
 FIBVIEWER="./fibviewer/build/Desktop-Debug/fibviewer"
 OUTPUT_DIR="./outputs"
 VIEWFILE="./viewmatrix.txt"
@@ -38,8 +39,10 @@ if [[ "$1" == *.fib ]]; then
     echo "Running Bundler with: -fib $FIB_FILE -c_thr $C_THR -start_i $START_I -numcycles $NUMCYCLES"
     "$BUNDLER" -fib "$FIB_FILE" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES" -directed "$DIRECTED"
 
+    NAME=`basename ${FIB_FILE}`
+
     # Move and run FibViewer on the output file
-    FIB_TXT_FILE="${FIB_FILE}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I")_directed$DIRECTED.vtk"
+    FIB_TXT_FILE="${NAME}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I")_directed$DIRECTED.vtk"
 else
     # Case: Using -nodes and -cons
     if [ "$#" -lt 3 ]; then
@@ -53,23 +56,33 @@ else
 
     echo "Running Bundler with: -nodes $NODES -cons $CONNECTIONS -fileName $OUTPUT_FILENAME -c_thr $C_THR -start_i $START_I -numcycles $NUMCYCLES"
     "$BUNDLER" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES" -directed "$DIRECTED"
+#     "$BUNDLER_MSEB" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES"
 
     # Move and run FibViewer on the output file
     FIB_TXT_FILE="${OUTPUT_FILENAME}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I")_directed$DIRECTED.vtk"
+#     FIB_TXT_FILE_MSEB="${OUTPUT_FILENAME}MSEB_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I")_directed0.vtk"
 fi
+
+# echo "$FIB_TXT_FILE I am looking for this file"
 
 # Check if the output file was created
 if [[ -f "$FIB_TXT_FILE" ]]; then
     # Move output file to the outputs folder
     mv "$FIB_TXT_FILE" "$OUTPUT_DIR/"
+#     mv "$FIB_TXT_FILE_MSEB" "$OUTPUT_DIR/"
     echo "Moved output file to $OUTPUT_DIR/$FIB_TXT_FILE"
 
     # Run FibViewer on the moved file
     echo "Running FibViewer with: $OUTPUT_DIR/$FIB_TXT_FILE"
 
+    echo "Running EMSEB"
     python3 ./metrics/voxel_based_edge_density.py "$OUTPUT_DIR/$FIB_TXT_FILE"
+#     echo "Running MSEB"
+#     python3 ./metrics/voxel_based_edge_density.py "$OUTPUT_DIR/$FIB_TXT_FILE_MSEB"
 
-    "$FIBVIEWER" "$OUTPUT_DIR/$FIB_TXT_FILE" -viewmatrix "$VIEWFILE"
+    "$FIBVIEWER" "$OUTPUT_DIR/$FIB_TXT_FILE" -viewmatrix "$VIEWFILE" # &
+#     "$FIBVIEWER" "$OUTPUT_DIR/$FIB_TXT_FILE_MSEB" -viewmatrix "$VIEWFILE" &
+    # wait
 else
     echo "Error: Expected output file '$FIB_TXT_FILE' not found!"
     exit 2

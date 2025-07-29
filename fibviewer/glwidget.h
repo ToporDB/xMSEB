@@ -75,6 +75,7 @@ private:
     bool p1, p2;
     bool intermediateNodes = false, startAndEndNodes = true;
     bool dualGradient;
+    bool useSpline = false;
 public slots:
     void save();
     void screenshot(QString name);

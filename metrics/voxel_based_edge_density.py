@@ -1,5 +1,6 @@
 import os
 import sys
+import math
 import numpy as np
 from collections import defaultdict
 import matplotlib.pyplot as plt
@@ -206,6 +207,66 @@ def compute_ink_paper_ratio(voxel_edges, num_voxels):
     return used_voxels / available_voxels
 
 
+def compute_edge_smoothness(nodes, edges):
+    total_avg_bend = 0.0
+    total_length_ratio = 0.0
+    total_composite_score = 0.0
+    count = 0
+
+    for edge in edges:
+        if len(edge) < 3:
+            continue  # Skip straight lines
+
+        # Edge points
+        pts = nodes[edge]
+
+        # Average bend
+        bend_sum = 0.0
+        bend_count = 0
+        for i in range(1, len(pts) - 1):
+            v1 = pts[i] - pts[i - 1]
+            v2 = pts[i + 1] - pts[i]
+            norm1 = np.linalg.norm(v1)
+            norm2 = np.linalg.norm(v2)
+
+            if norm1 < 1e-6 or norm2 < 1e-6:
+                continue
+
+            v1 /= norm1
+            v2 /= norm2
+            dot = np.clip(np.dot(v1, v2), -1.0, 1.0)
+            angle = math.acos(dot)
+            bend_sum += angle
+            bend_count += 1
+
+        avg_bend = bend_sum / bend_count if bend_count > 0 else 0.0
+
+        # Edge lengths
+        bundled_len = np.sum(np.linalg.norm(np.diff(pts, axis=0), axis=1))
+        straight_len = np.linalg.norm(pts[-1] - pts[0])
+        length_ratio = bundled_len / straight_len if straight_len > 0 else 1.0
+
+        composite = avg_bend * length_ratio
+
+        total_avg_bend += avg_bend
+        total_length_ratio += length_ratio
+        total_composite_score += composite
+        count += 1
+
+    if count == 0:
+        return {
+            "Avg Bend (rad)": 0.0,
+            "Avg Length Ratio": 1.0,
+            "Smoothness Score": 0.0,
+        }
+
+    return {
+        "Avg Bend (rad)": total_avg_bend / count,
+        "Avg Length Ratio": (total_length_ratio / count).item(),
+        "Smoothness Score": (total_composite_score / count).item(),
+    }
+
+
 def compute_metrics(
     nodes, edges, min_coords, max_coords, voxel_size, voxel_indices, num_voxels=10
 ):
@@ -218,11 +279,13 @@ def compute_metrics(
     overplotted_percent = compute_overplotted_percentage(voxel_edges)
     overcrowded_percent = compute_overcrowded_percentage(edges, len(edges), nodes)
     ink_paper_ratio = compute_ink_paper_ratio(voxel_edges, num_voxels)
+    smoothness = compute_edge_smoothness(nodes, edges)
 
     return {
         "Overplotted%": overplotted_percent,
         "Overcrowded%": overcrowded_percent,
         "Ink-Paper Ratio": ink_paper_ratio,
+        **smoothness,  # Merges the smoothness metrics
     }
 
 

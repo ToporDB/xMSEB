@@ -10,8 +10,7 @@ Edge::Edge(QVector3D fn, QVector3D tn)
     points << fn << tn;
 }
 
-
-void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, bool dualGradient) {
+void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, bool dualGradient, bool useSpline) {
     if (startAndEndNodes) {
         glPointSize(10);
         glColor4f(0.0, 0.0, 0.0, alpha);
@@ -29,8 +28,8 @@ void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, b
 
     QList<QVector3D> drawPoints;
 
-    if (n < 4) {
-        drawPoints = points; // Use original points
+    if (!useSpline || n < 4) {
+        drawPoints = points; // Use raw points if no spline or too few
     } else {
         drawPoints = SplineUtils::interpolateCatmullRom(points, 5);
     }
@@ -81,6 +80,7 @@ void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, b
         }
     }
 }
+
 void Edge::glVertex(QVector3D v){
     glVertex3f(v.x(),v.y(),v.z());
 }
