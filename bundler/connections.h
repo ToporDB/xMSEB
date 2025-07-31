@@ -42,6 +42,7 @@ public:
     double c_thr, bell, beta, lane_width, lambda, poly_deg;
     int start_i, numcycles, smooth, checkpoints, directed, bundles;
     QString prefix;
+    bool direction_switch = false;
 
 private:
     QList<QVector3D> nodes;
