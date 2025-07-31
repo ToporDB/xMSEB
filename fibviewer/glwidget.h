@@ -73,7 +73,7 @@ private:
     double scale;
     float bg;
     bool p1, p2;
-    bool intermediateNodes = false, startAndEndNodes = true;
+    bool intermediateNodes = true, startAndEndNodes = true;
     bool dualGradient;
     bool useSpline = false;
 public slots:

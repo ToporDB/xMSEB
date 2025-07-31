@@ -181,7 +181,7 @@ void Connections::params() {
     directed = 0;
     lambda = 1e-4;
     bundles = 0;
-    poly_deg = 1.0;
+    poly_deg = 0.0;
 }
 
 void Connections::subdivide(int newp) {
@@ -380,7 +380,7 @@ double Connections::vis_c(Edge* ep, Edge* eq) {
     return qMax(1-2*(pm-im).length()/(i0-i1).length(),(float)0.0);
 }
 
-QVector3D Connections::proj(QVector3D a, QVector3D b, QVector3D p) {
+QVector3D Connections::proj(QVector3D a, QVector3D b, QVector3D p) const {
     QVector3D ba = b-a;
     QVector3D pa = p-a;
     return a + ba*QVector3D::dotProduct(ba,pa) / ba.lengthSquared();
@@ -595,18 +595,48 @@ QString Connections::name(int current_start_i = -1, int current_numcycles = -1) 
 }
 
 std::pair<QVector3D, double> Connections::computeUndirectedAttractionForce(
-    Edge* e, Edge* other, int &i, int &ei, int &ej
+    Edge* e, Edge* other, int& i, int& ei, int& ej
     ) const {
-    QVector3D p = e->points.at(i);
-    QVector3D pe = other->flip(e)
-                       ? other->points.at(i)
-                       : other->points.at(other->points.length() - 1 - i);
+    const QVector3D& p = e->points.at(i);
 
-    double weight = qExp(-(pe - p).lengthSquared() / (2 * bell * bell)) /
-                    other->wt.toDouble(); // * std::pow(comp(ei, ej), 2);
+    // Step 1: Try matching index
+    bool flipOther = other->flip(e);
+    int j_match = flipOther ? i : other->points.length() - 1 - i;
 
-    return {pe, weight};
+    const QVector3D& q_match = other->points.at(j_match);
+    bool p_visible_to_q = vis_point_on_edge(other, p);
+    bool q_visible_to_p = vis_point_on_edge(e, q_match);
+
+    if (p_visible_to_q && q_visible_to_p) {
+        double d2 = (q_match - p).lengthSquared();
+        double weight = qExp(-d2 / (2 * bell * bell)) / other->wt.toDouble();
+        return {q_match, weight};
+    }
+
+    // Step 2: Fall back to closest visible point (excluding endpoints)
+    int closest_j = -1;
+    double minDistSq = std::numeric_limits<double>::max();
+    QVector3D closest_q;
+
+    for (int j = 1; j < other->points.length() - 1; ++j) {
+        const QVector3D& candidate = other->points.at(j);
+        if (!vis_point_on_edge(e, candidate)) continue;
+        if (!vis_point_on_edge(other, p)) continue;
+
+        double d2 = (candidate - p).lengthSquared();
+        if (d2 < minDistSq) {
+            minDistSq = d2;
+            closest_j = j;
+            closest_q = candidate;
+        }
+    }
+
+    if (closest_j == -1) return {{0, 0, 0}, 0.0};  // no visible match
+
+    double weight = qExp(-minDistSq / (2 * bell * bell)) / other->wt.toDouble();
+    return {closest_q, weight};
 }
+
 
 std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
     Edge* e, Edge* other, int &i, int &ei, int &ej
@@ -638,4 +668,19 @@ std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
                     other->wt.toDouble(); // * std::pow(comp(ei, ej), 2);
 
     return {potential, weight};
+}
+
+bool Connections::vis_point_on_edge(Edge* Q, const QVector3D& p_i) const {
+    const QVector3D& a = Q->points.first();
+    const QVector3D& b = Q->points.last();
+
+    QVector3D projPoint = proj(a, b, p_i);
+
+    // Check if projection lies between a and b using dot products
+    QVector3D ab = b - a;
+    QVector3D ap = projPoint - a;
+    QVector3D bp = projPoint - b;
+
+    // If projection lies "between" a and b, both dot products should be ≤ 0
+    return QVector3D::dotProduct(ab, bp) <= 0 && QVector3D::dotProduct(-ab, ap) <= 0;
 }

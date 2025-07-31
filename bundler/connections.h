@@ -30,7 +30,7 @@ public:
     void writeBundles();
     QString name();
     QString name(int, int);
-
+    bool vis_point_on_edge(Edge* Q, const QVector3D& p_i) const;
     std::pair<QVector3D, double> computeUndirectedAttractionForce(
         Edge* e, Edge* other, int &i, int &ei, int &ej
         ) const;
@@ -47,7 +47,7 @@ private:
     QList<QVector3D> nodes;
     QList<Edge*> edges;
     double vis_c(Edge* e1, Edge* e2);
-    QVector3D proj(QVector3D a, QVector3D b, QVector3D p);
+    QVector3D proj(QVector3D a, QVector3D b, QVector3D p) const;
 };
 
 #endif // CONNECTIONS_H
