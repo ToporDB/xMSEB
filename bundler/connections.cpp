@@ -666,12 +666,14 @@ int Connections::closest_intermediatePoint_index(Edge* Q, Edge* P, const int& i)
     bool flipOther = Q->flip(P);
     int j_match = flipOther ? i : Q->points.length() - 1 - i;
 
-    const QVector3D& q_match = Q->points.at(j_match);
-    bool p_visible_to_q = vis_point_on_edge(Q, p);
-    bool q_visible_to_p = vis_point_on_edge(P, q_match);
+    if (j_match > 0 && j_match < Q->points.length() - 1) {
+        const QVector3D& q_match = Q->points.at(j_match);
+        bool p_visible_to_Q = vis_point_on_edge(Q, p);
+        bool q_visible_to_P = vis_point_on_edge(P, q_match);
 
-    if (p_visible_to_q && q_visible_to_p) {
-        return j_match;
+        if (p_visible_to_Q && q_visible_to_P) {
+            return j_match;
+        }
     }
 
     // If matching index is not visible, search closest visible point (excluding endpoints)
@@ -684,7 +686,6 @@ int Connections::closest_intermediatePoint_index(Edge* Q, Edge* P, const int& i)
         for (int j = 1; j < Q->points.length() - 1; ++j) {
             const QVector3D& candidate = Q->points.at(j);
             if (!vis_point_on_edge(P, candidate)) continue;
-            if (!vis_point_on_edge(Q, p)) continue;
 
             double d2 = (candidate - p).lengthSquared();
             if (d2 < minDistSq) {
@@ -698,7 +699,6 @@ int Connections::closest_intermediatePoint_index(Edge* Q, Edge* P, const int& i)
         for (int j = Q->points.length() - 1; j > 0 ; --j) {
             const QVector3D& candidate = Q->points.at(j);
             if (!vis_point_on_edge(P, candidate)) continue;
-            if (!vis_point_on_edge(Q, p)) continue;
 
             double d2 = (candidate - p).lengthSquared();
             if (d2 < minDistSq) {
