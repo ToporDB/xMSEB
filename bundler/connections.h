@@ -31,12 +31,13 @@ public:
     QString name();
     QString name(int, int);
     bool vis_point_on_edge(Edge* Q, const QVector3D& p_i) const;
+    int closest_intermediatePoint_index(Edge* Q, Edge* P, const int& i) const;
     std::pair<QVector3D, double> computeUndirectedAttractionForce(
-        Edge* e, Edge* other, int &i, int &ei, int &ej
+        Edge* e, Edge* other, int &i
         ) const;
 
     std::pair<QVector3D, double> computeDirectedAttractionForce(
-        Edge* e, Edge* other, int &i, int &ei, int &ej
+        Edge* e, Edge* other, int &i
         ) const;
 
     double c_thr, bell, beta, lane_width, lambda, poly_deg;

@@ -219,7 +219,7 @@ double Connections::attract() {
                 QVector3D potential;
                 double weight = 0.0;
 
-                std::tie(potential, weight) = computeUndirectedAttractionForce(e, other, i, ie, ef);
+                std::tie(potential, weight) = computeUndirectedAttractionForce(e, other, i);
 
                 fsum += weight;
                 f += weight * potential;
@@ -269,7 +269,7 @@ void Connections::fullAttract() {
 
     if (directed) {
         addLateralForces();
-        for (int i = 0; i < start_i; ++i) attract();
+        attract();
     }
 
     // for further subdivision without attraction
@@ -304,7 +304,7 @@ void Connections::addLateralForces() {
                 QVector3D potential;
                 double weight = 0.0;
 
-                std::tie(potential, weight) = computeDirectedAttractionForce(p, q, i, ei, ej);
+                std::tie(potential, weight) = computeDirectedAttractionForce(p, q, i);
 
                 fsum += weight;
                 f += weight * potential;
@@ -596,70 +596,26 @@ QString Connections::name(int current_start_i = -1, int current_numcycles = -1) 
 }
 
 std::pair<QVector3D, double> Connections::computeUndirectedAttractionForce(
-    Edge* e, Edge* other, int& i, int& ei, int& ej
+    Edge* e, Edge* other, int& i
     ) const {
     const QVector3D& p = e->points.at(i);
 
-    // // Step 1: Try matching index
-    bool flipOther = other->flip(e);
-    int j_match = flipOther ? i : other->points.length() - 1 - i;
+    int best_j = closest_intermediatePoint_index(other, e, i);
+    if (best_j == -1) return {{0, 0, 0}, 0.0};  // no visible match
 
-    // const QVector3D& q_match = other->points.at(j_match);
-    // bool p_visible_to_q = vis_point_on_edge(other, p);
-    // bool q_visible_to_p = vis_point_on_edge(e, q_match);
+    const QVector3D& q = other->points.at(best_j);
 
-    // if (p_visible_to_q && q_visible_to_p) {
-    //     double d2 = (q_match - p).lengthSquared();
-    //     double weight = qExp(-d2 / (2 * bell * bell)) / other->wt.toDouble();
-    //     return {q_match, weight};
-    // }
-
-    // Step 2: Fall back to closest visible point (excluding endpoints)
-    int closest_j = -1;
-    double minDistSq = std::numeric_limits<double>::max();
-    QVector3D closest_q;
-
-    if (direction_switch) {
-        for (int j = 1; j < other->points.length() - 1; ++j) {
-            const QVector3D& candidate = other->points.at(j);
-            if (!vis_point_on_edge(e, candidate)) continue;
-            if (!vis_point_on_edge(other, p)) continue;
-
-            double d2 = (candidate - p).lengthSquared();
-            if (d2 < minDistSq) {
-                minDistSq = d2;
-                closest_j = j;
-                closest_q = candidate;
-            }
-        }
-    }
-    else
-    {
-        for (int j = other->points.length() - 1; j > 0 ; --j) {
-            const QVector3D& candidate = other->points.at(j);
-            if (!vis_point_on_edge(e, candidate)) continue;
-            if (!vis_point_on_edge(other, p)) continue;
-
-            double d2 = (candidate - p).lengthSquared();
-            if (d2 < minDistSq) {
-                minDistSq = d2;
-                closest_j = j;
-                closest_q = candidate;
-            }
-        }
-    }
-
-    if (closest_j == -1) return {{0, 0, 0}, 0.0};  // no visible match
-
-    double weight = qExp(-minDistSq / (2 * bell * bell)) / other->wt.toDouble();
-    return {closest_q, weight};
+    double weight = qExp(-(q - p).lengthSquared() / (2 * bell * bell)) / other->wt.toDouble();
+    return {q, weight};
 }
 
 
 std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
-    Edge* e, Edge* other, int &i, int &ei, int &ej
+    Edge* e, Edge* other, int &i
     ) const {
-    int other_i = other->points.length() - 1 - i;
+    // int other_i = other->points.length() - 1 - i;
+    int other_i = closest_intermediatePoint_index(other, e, i);
+    if (other_i == -1) return {{0, 0, 0}, 0.0};  // no visible match
 
     QVector3D q_j = other->points.at(other_i);
     QVector3D p_i = e->points.at(i);
@@ -683,7 +639,7 @@ std::pair<QVector3D, double> Connections::computeDirectedAttractionForce(
     QVector3D potential = q_j + N_j * lane_width * (((e->length() + other->length()) / 2) / 50);
 
     double weight = qExp(-(potential - p_i).lengthSquared() / (2 * bell * bell)) /
-                    other->wt.toDouble(); // * std::pow(comp(ei, ej), 2);
+                    other->wt.toDouble();
 
     return {potential, weight};
 }
@@ -701,4 +657,56 @@ bool Connections::vis_point_on_edge(Edge* Q, const QVector3D& p_i) const {
 
     // If projection lies "between" a and b, both dot products should be ≤ 0
     return QVector3D::dotProduct(ab, bp) <= 0 && QVector3D::dotProduct(-ab, ap) <= 0;
+}
+
+int Connections::closest_intermediatePoint_index(Edge* Q, Edge* P, const int& i) const {
+    const QVector3D& p = P->points.at(i);
+
+    // Try matching index if it is "visible"
+    bool flipOther = Q->flip(P);
+    int j_match = flipOther ? i : Q->points.length() - 1 - i;
+
+    const QVector3D& q_match = Q->points.at(j_match);
+    bool p_visible_to_q = vis_point_on_edge(Q, p);
+    bool q_visible_to_p = vis_point_on_edge(P, q_match);
+
+    if (p_visible_to_q && q_visible_to_p) {
+        return j_match;
+    }
+
+    // If matching index is not visible, search closest visible point (excluding endpoints)
+    int closest_j = -1;
+    double minDistSq = std::numeric_limits<double>::max();
+
+    // To have the best bundling result and not be biased by going only one way,
+    // We are going to alter the direction each cycle.
+    if (direction_switch) {
+        for (int j = 1; j < Q->points.length() - 1; ++j) {
+            const QVector3D& candidate = Q->points.at(j);
+            if (!vis_point_on_edge(P, candidate)) continue;
+            if (!vis_point_on_edge(Q, p)) continue;
+
+            double d2 = (candidate - p).lengthSquared();
+            if (d2 < minDistSq) {
+                minDistSq = d2;
+                closest_j = j;
+            }
+        }
+    }
+    else
+    {
+        for (int j = Q->points.length() - 1; j > 0 ; --j) {
+            const QVector3D& candidate = Q->points.at(j);
+            if (!vis_point_on_edge(P, candidate)) continue;
+            if (!vis_point_on_edge(Q, p)) continue;
+
+            double d2 = (candidate - p).lengthSquared();
+            if (d2 < minDistSq) {
+                minDistSq = d2;
+                closest_j = j;
+            }
+        }
+    }
+
+    return closest_j;
 }
