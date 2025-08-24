@@ -197,80 +197,38 @@ void Connections::subdivide(int newp) {
 
 double Connections::attract() {
     double totalMovement = 0.0;
-#pragma omp parallel for reduction(+:totalMovement)
+    #pragma omp parallel for reduction(+:totalMovement)
     for (int ie = 0; ie < edges.size(); ++ie) {
         Edge* e = edges.at(ie);
         double weightOfThisEdge = e->wt.toDouble();
 
-        QList<double> fsum;
-        QList<QVector3D> f;
-        for (int i = 0; i < e->points.length(); ++i) {
-            fsum << 0.0;
-            f << QVector3D();
-        }
+        for (int i = 1; i < e->points.length() - 1; ++i) {
+            QVector3D p = e->points.at(i);
+            double edgeDepthFactor = std::pow((4 * i * (e->points.length() - i)) / std::pow(e->points.length(), 2), poly_deg);
+            double fsum = 0;
+            QVector3D f(0, 0, 0);
 
-        for (int ef = 0; ef < edges.size(); ++ef) {
-            float c = comp(ie, ef);
-            if (c <= c_thr || (directed && directions[ie + edges.size() * ef] < 0)) continue;
+            QVector3D e_dir = e->points.last() - e->points.first();
+            e_dir.normalize();
 
-            Edge* other = edges.at(ef);
+            for (int ef = 0; ef < edges.size(); ++ef) {
+                float c = comp(ie, ef);
+                if (c <= c_thr || (directed && directions[ie + edges.size() * ef] < 0)) continue;
 
-            QList<double> tmp_fsum;
-            QList<QVector3D> tmp_f;
-            for (int i = 0; i < e->points.length(); ++i) {
-                tmp_fsum << 0.0;
-                tmp_f << QVector3D();
-            }
-
-            for (int i = 1; i < e->points.length() - 1; ++i) {
-                QVector3D e_dir = e->points.last() - e->points.first();
-                e_dir.normalize();
+                Edge* other = edges.at(ef);
 
                 QVector3D potential;
                 double weight = 0.0;
 
                 std::tie(potential, weight) = computeUndirectedAttractionForce(e, other, i);
 
-                tmp_fsum[i] = weight;
-                tmp_f[i] = weight * potential;
+                fsum += weight;
+                f += weight * potential;
             }
 
-            int bestStart = -1, bestLen = 0;
-            int curStart = -1, curLen = 0;
-
-            for (int i = 0; i < tmp_f.size(); ++i) {
-                if (tmp_fsum[i] > 0) {
-                    if (curStart == -1) curStart = i;
-                    ++curLen;
-                } else {
-                    if (curLen > bestLen) {
-                        bestLen = curLen;
-                        bestStart = curStart;
-                    }
-                    curStart = -1;
-                    curLen = 0;
-                }
-            }
-            if (curLen > bestLen) { // handle tail run
-                bestLen = curLen;
-                bestStart = curStart;
-            }
-
-            // ---- accumulate only the longest run from this pair ----
-            if (bestStart != -1) {
-                for (int i = bestStart; i < bestStart + bestLen; ++i) {
-                    fsum[i] += tmp_fsum[i];
-                    f[i] += tmp_f[i];
-                }
-            }
-        }
-
-        for (int i = 1; i < e->points.length() - 1; ++i) {
-            if (fsum[i] > 0) {
-                f[i] /= fsum[i];
-                QVector3D p = e->points.at(i);
-                double edgeDepthFactor = std::pow((4 * i * (e->points.length() - i)) / std::pow(e->points.length(), 2), poly_deg);
-                QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f[i] - p) / weightOfThisEdge);
+            if (fsum > 0) {
+                f /= fsum;
+                QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f - p) / weightOfThisEdge);
                 force += beta * e->forces.at(i);  // Momentum
                 e->forces[i] = force;
                 totalMovement += force.length();
