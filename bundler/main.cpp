@@ -26,7 +26,8 @@ int main(int argc, char *argv[])
                     "[-numcycles <number of cycles>] "
                     "[-checkpoints <0 or 1>, default is 0] "
                     "[-directed <0 or 1>, default is 0] "
-                    "[-bundles <0 or 1>, default is 0]";
+                    "[-bundles <0 or 1>, default is 0]"
+                    "[-bell <bell curve width>]";
             return 1;
     }
 
@@ -53,6 +54,7 @@ int main(int argc, char *argv[])
     if (arg("directed")!="") cons->directed = arg("directed").toInt();
     if (arg("bundles")!="") cons->bundles = arg("bundles").toInt();
     if (arg("poly_deg")!="") cons->poly_deg = std::clamp(arg("poly_deg").toDouble(), 0.0, 3.0);
+    if (arg("bell")!="") cons->bell = std::clamp(arg("bell").toDouble(), 0.0, 15.0);
 
     qDebug() << cons->name();
 

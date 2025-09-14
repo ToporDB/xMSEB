@@ -173,7 +173,7 @@ void Connections::params() {
     c_thr = 0.8;
     start_i = 10;
     numcycles = 10;
-    bell = 5;
+    bell = 10;
     smooth = 3;
     // TODO: set beta to 0.65f
     beta = 0.0;
