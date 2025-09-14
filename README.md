@@ -1,93 +1,76 @@
-# extended_mean_shifting_3d_edge_bundling
+# brainbundler
 
+The brainbundler repository contains the sources for two programs, which are both compiled using Qt (see http://qt.nokia.com/products/developer-tools/ for QT creator, or compile using qmake / make).
 
+## bundler
 
-## Getting started
+Bundler is a mean-shift-bundling command-line tool. It takes a binary 3D graph as the input, and outputs a .fib (binary vtk-file used in fiber tracking software). The input can either be two ascii files (one with coordinates, the other describing connections); or a .fib-file, which only contains straight edges without intermediate points.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### Usage:
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+    bundler (-nodes "nodesfile" -cons "connectionsfile" / -fib ".fib-file") [-c_thr "compatibility threshold"] [-start_i "iterations in 1st cycle"] [-numcycles "number of cycles"]
 
-## Add your files
+### Input files
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+Both ascii files and .fib files can be used for loading data into Bundler.
 
-```
-cd existing_repo
-git remote add origin https://gitlab.au.dk/au752678/extended_mean_shifting_3d_edge_bundling.git
-git branch -M main
-git push -uf origin main
-```
+#### Ascii File-Formats:
 
-## Integrate with your tools
+The file formats for the ascii files are as follows:
 
-- [ ] [Set up project integrations](https://gitlab.au.dk/au752678/extended_mean_shifting_3d_edge_bundling/-/settings/integrations)
+The nodes file contains three coordinates (x,y,z) for each node on each line:
 
-## Collaborate with your team
+<pre>
+x0 y0 z0
+x1 y1 z1
+x2 y2 z2
+x3 y3 z3
+etc...
+</pre>
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+The list of connections contains pairs of indices in the coordinate file. Note that the first line in that file is referred to as node 0:
 
-## Test and Deploy
+<pre>
+0 3
+2 3
+4 1
+etc...
+</pre>
 
-Use the built-in continuous integration in GitLab.
+#### Converting ascii to .fib
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+To convert a pair of ascii-files to a single .fib-file, use the following command:
 
-***
+    bundler -nodes "nodefile" -cons "connectionsfile" -numcycles 0
 
-# Editing this README
+### Parameters:
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+**-c_thr**: The compatibility threshold (default 0.8). This value determines how compatible two edges should be in order to move towards a common center of gravity. c_thr is responsible for how many distinct bundles emerge from the bundling: Too low values make everything bundle together, while too high values leave too many edges unbundled.
 
-## Suggestions for a good README
+**-start_i**: Number of iterations in the first cycle; every following cycle has one iteration less. This parameter, like numcycles, influences the shape of the bundles.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+**-numcycles**: Number of cycles. This parameter determines the shape of the bundles, as well as the number of subdivision points.
 
-## Name
-Choose a self-explaining name for your project.
+**-bell**: Width of the Gaussian kernel used to calculate the weights for the mean shift (default 5).
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+**-smooth**: Number of additional subdivision steps without shifting after the bundling (default 3). Determines how smooth the final connections appear.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+## fibviewer
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+...is a simple viewer for .fib-files. Basic usage is as follows:
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+    fibviewer ".fib-file"
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+This would also be the place to start if you want to bundle your own data in a different format: Subclassing "Connections" should make it easy to look at data, and then export it to a .fib format file.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+For an example, see "artificialconnections". It can be loaded with the following command:
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+    fibviewer artificial
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+In order to write a .fib-File, which can then be bundled with Bundler:
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+    fibviewer artificial -writefib
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+The following can be used to export the bundled connections as .obj files, for example to import them in 3D rendering software like Blender:
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+    fibviewer artificial.fib -writeobj
