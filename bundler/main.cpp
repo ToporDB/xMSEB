@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     if (arg("checkpoints")!="") cons->checkpoints = arg("checkpoints").toInt();
     if (arg("directed")!="") cons->directed = arg("directed").toInt();
     if (arg("bundles")!="") cons->bundles = arg("bundles").toInt();
-    if (arg("poly_deg")!="") cons->poly_deg = std::clamp(arg("poly_deg").toDouble(), 0.0, 3.0);
+    // if (arg("poly_deg")!="") cons->poly_deg = std::clamp(arg("poly_deg").toDouble(), 0.0, 3.0);
     if (arg("bell")!="") cons->bell = std::clamp(arg("bell").toDouble(), 0.0, 15.0);
 
     qDebug() << cons->name();
