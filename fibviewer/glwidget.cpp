@@ -1,6 +1,5 @@
 #include <QtGui>
 #include <QtOpenGL>
-
 #include <QtDebug>
 
 #include "glwidget.h"
@@ -59,6 +58,9 @@ GLWidget::~GLWidget()
 
 void GLWidget::initializeGL()
 {
+    selected = new QVector3D(0, 0, 0);
+    glEnable(GL_RESCALE_NORMAL);
+
     glCullFace(GL_FRONT);
     glDisable(GL_CULL_FACE);
     glShadeModel(GL_SMOOTH);
@@ -72,6 +74,7 @@ void GLWidget::initializeGL()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glEnable(GL_LIGHT0);
+    glEnable(GL_MULTISAMPLE);
     glEnable(GL_LINE_SMOOTH);
     static GLfloat global_ambient[] = { 0.5f, 0.5f, 0.5f, 1.0f };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
@@ -105,7 +108,7 @@ void GLWidget::paintGL()
     glEnable(GL_DEPTH_TEST);
 
     for (int i = 0; i < cons->edges.size(); ++i) {
-        cons->edges[i]->paintGL(intermediateNodes, startAndEndNodes, stuffAlpha, dualGradient, useSpline);
+        cons->edges[i]->paintGL(intermediateNodes, startAndEndNodes, stuffAlpha, dualGradient, useSpline, cons->selected);
     }
 
 }
@@ -128,10 +131,85 @@ void GLWidget::resizeGL(int width, int height)
 void GLWidget::mousePressEvent(QMouseEvent *event)
 {
     lastPos = event->pos();
+
+    select(event);
+}
+
+static bool myUnProject(double winX, double winY, double winZ,
+                        const double model[16], const double proj[16], const int viewport[4],
+                        double *objX, double *objY, double *objZ)
+{
+    QMatrix4x4 modelMat, projMat;
+
+    // GL uses column-major, QMatrix4x4 expects row-major, so transpose
+    for (int i = 0; i < 16; ++i) {
+        modelMat.data()[i] = (float)model[i];
+        projMat.data()[i]  = (float)proj[i];
+    }
+
+    QMatrix4x4 mvp = projMat * modelMat;
+    bool invertible;
+    QMatrix4x4 invMvp = mvp.inverted(&invertible);
+    if (!invertible)
+        return false;
+
+    // normalize window coords to [-1, 1]
+    float x = (winX - viewport[0]) / viewport[2] * 2.0f - 1.0f;
+    float y = (winY - viewport[1]) / viewport[3] * 2.0f - 1.0f;
+    float z = 2.0f * winZ - 1.0f;
+
+    QVector4D in(x, y, z, 1.0f);
+    QVector4D out = invMvp * in;
+
+    if (out.w() == 0.0f) return false;
+
+    *objX = out.x() / out.w();
+    *objY = out.y() / out.w();
+    *objZ = out.z() / out.w();
+    return true;
+}
+
+bool GLWidget::select(QMouseEvent* event) {
+    if (event->button() == Qt::MiddleButton) {
+        // Matrices & viewport
+        GLdouble modelview[16], projection[16];
+        GLint viewport[4];
+        GLfloat z;
+        GLdouble objx, objy, objz;
+
+        // Use your stored view matrix (float -> double cast)
+        for (int i = 0; i < 16; i++)
+            modelview[i] = static_cast<GLdouble>(view[i]);
+
+        // Get projection and viewport from OpenGL
+        glGetDoublev(GL_PROJECTION_MATRIX, projection);
+        glGetIntegerv(GL_VIEWPORT, viewport);
+
+        // Flip y since Qt origin is top-left
+        int realY = viewport[3] - event->y();
+
+        // Read depth buffer at mouse position
+        glReadPixels(event->x(), realY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
+
+        // Unproject to object space
+        myUnProject(event->x(), realY, z,
+                    modelview, projection, viewport,
+                    &objx, &objy, &objz);
+
+        qDebug() << "Selected point:" << objx << "," << objy << "," << objz;
+
+        selected->setX(objx);
+        selected->setY(objy);
+        selected->setZ(objz);
+        cons->selectForPoint(selected);
+
+        return true;
+    }
+    return false;
 }
 
 void GLWidget::mouseMoveEvent(QMouseEvent *event)
-{   
+{
     glLoadIdentity();
 
     int dx = event->x() - lastPos.x();

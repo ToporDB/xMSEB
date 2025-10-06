@@ -10,11 +10,11 @@ fi
 C_THR="${4:-0.8}"
 START_I="${5:-15}"
 NUMCYCLES="${6:-7}"
-BELL="${7:-5}"
+BELL="${7:-10}"
 DIRECTED="${8:-0}"
 
 # Define paths
-BUNDLER="./bundler/build/Desktop-Debug/bundler"
+BUNDLER="./bundler/build/Desktop-Release/bundler"
 BUNDLER_MSEB="./bundler/build/Desktop-Debug/MSEB_bundler"
 FIBVIEWER="./fibviewer/build/Desktop-Debug/fibviewer"
 OUTPUT_DIR="./outputs"
@@ -37,12 +37,12 @@ if [[ "$1" == *.fib ]]; then
     # Case: Using a .fib file
     FIB_FILE="$1"
     echo "Running Bundler with: -fib $FIB_FILE -c_thr $C_THR -start_i $START_I -numcycles $NUMCYCLES"
-    "$BUNDLER" -fib "$FIB_FILE" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES" -directed "$DIRECTED"
+    "$BUNDLER" -fib "$FIB_FILE" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES" -directed "$DIRECTED" -bell "$BELL"
 
     NAME=`basename ${FIB_FILE}`
 
     # Move and run FibViewer on the output file
-    FIB_TXT_FILE="${NAME}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I")_directed$DIRECTED.vtk"
+    FIB_TXT_FILE="${NAME}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I")_directed${DIRECTED}_bell$(printf "%.2f" "$BELL").vtk"
 else
     # Case: Using -nodes and -cons
     if [ "$#" -lt 3 ]; then
@@ -55,11 +55,11 @@ else
     OUTPUT_FILENAME="$3"
 
     echo "Running Bundler with: -nodes $NODES -cons $CONNECTIONS -fileName $OUTPUT_FILENAME -c_thr $C_THR -start_i $START_I -numcycles $NUMCYCLES"
-    "$BUNDLER" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES" -directed "$DIRECTED"
+    "$BUNDLER" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES" -directed "$DIRECTED" -bell "$BELL"
 #     "$BUNDLER_MSEB" -nodes "$NODES" -cons "$CONNECTIONS" -fileName "$OUTPUT_FILENAME" -c_thr "$C_THR" -start_i "$START_I" -numcycles "$NUMCYCLES"
 
     # Move and run FibViewer on the output file
-    FIB_TXT_FILE="${OUTPUT_FILENAME}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I")_directed$DIRECTED.vtk"
+    FIB_TXT_FILE="${OUTPUT_FILENAME}_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I")_directed${DIRECTED}_bell$(printf "%.2f" "$BELL").vtk"
 #     FIB_TXT_FILE_MSEB="${OUTPUT_FILENAME}MSEB_c_thr$(printf "%.4f" "$C_THR")_numcycles$(printf "%02d" "$NUMCYCLES")_start_i$(printf "%04d" "$START_I")_directed0.vtk"
 fi
 

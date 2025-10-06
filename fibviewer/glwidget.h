@@ -76,6 +76,9 @@ private:
     bool intermediateNodes = true, startAndEndNodes = true;
     bool dualGradient;
     bool useSpline = false;
+    QVector3D* selected;
+    bool select(QMouseEvent * event);
+
 public slots:
     void save();
     void screenshot(QString name);

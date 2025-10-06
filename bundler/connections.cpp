@@ -172,17 +172,15 @@ Connections::Connections(QString fib){
 void Connections::params() {
     c_thr = 0.8;
     start_i = 10;
-    numcycles = 10;
-    bell = 10;
+    numcycles = 7;
+    bell = 5;
     smooth = 3;
-    // TODO: set beta to 0.65f
-    beta = 0.0;
+    beta = 0.75;
     checkpoints = 0;
     lane_width = 1.0f;
     directed = 0;
     lambda = 1e-4;
     bundles = 0;
-    poly_deg = 0.0;
 }
 
 void Connections::subdivide(int newp) {
@@ -204,7 +202,6 @@ double Connections::attract() {
 
         for (int i = 1; i < e->points.length() - 1; ++i) {
             QVector3D p = e->points.at(i);
-            double edgeDepthFactor = std::pow((4 * i * (e->points.length() - i)) / std::pow(e->points.length(), 2), poly_deg);
             double fsum = 0;
             QVector3D f(0, 0, 0);
 
@@ -228,7 +225,7 @@ double Connections::attract() {
 
             if (fsum > 0) {
                 f /= fsum;
-                QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f - p) / weightOfThisEdge);
+                QVector3D force = ((f - p) / weightOfThisEdge);
                 force += beta * e->forces.at(i);  // Momentum
                 e->forces[i] = force;
                 totalMovement += force.length();
@@ -290,7 +287,6 @@ void Connections::addLateralForces() {
 
         for (int i = 1; i < p->points.length() - 1; ++i) {
             QVector3D p_i = p->points.at(i);
-            double edgeDepthFactor = (-i * (i - p->points.length())) / std::pow(p->points.length() / 2.0, 2);
             double fsum = 0;
             QVector3D f(0, 0, 0);
 
@@ -312,7 +308,7 @@ void Connections::addLateralForces() {
 
             if (fsum > 0) {
                 f /= fsum;
-                QVector3D force = edgeDepthFactor * edgeDepthFactor * ((f - p_i) / weightOfThisEdge);
+                QVector3D force = ((f - p_i) / weightOfThisEdge);
                 p->forces[i] = force;
             }
         }
@@ -592,7 +588,8 @@ QString Connections::name(int current_start_i = -1, int current_numcycles = -1) 
            "_c_thr" + QString::number(c_thr,'f',4) +
            "_numcycles" + QString("%1").arg(output_numcycles,2,10,QLatin1Char('0')) +
            "_start_i" + QString("%1").arg(output_start_i,4,10,QLatin1Char('0'))+
-           "_directed" + QString::number(directed);
+           "_directed" + QString::number(directed) +
+           "_bell" + QString("%1").arg(bell, 2, 'f', 2, QLatin1Char('0'));
 }
 
 std::pair<QVector3D, double> Connections::computeUndirectedAttractionForce(
@@ -655,7 +652,7 @@ bool Connections::vis_point_on_edge(Edge* Q, const QVector3D& p_i) const {
     QVector3D ap = projPoint - a;
     QVector3D bp = projPoint - b;
 
-    // If projection lies "between" a and b, both dot products should be ≤ 0
+    // If projection lies "between" a and b, both dot products should be <= 0
     return QVector3D::dotProduct(ab, bp) <= 0 && QVector3D::dotProduct(-ab, ap) <= 0;
 }
 

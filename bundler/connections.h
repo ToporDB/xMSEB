@@ -40,8 +40,8 @@ public:
         Edge* e, Edge* other, int &i
         ) const;
 
-    double c_thr, bell, beta, lane_width, lambda, poly_deg;
-    int start_i, numcycles, smooth, checkpoints, directed, bundles;
+    double c_thr, bell, beta, lane_width, lambda;
+    int start_i, numcycles, smooth, checkpoints, directed, bundles, total_cycles;
     QString prefix;
     bool direction_switch = false;
 

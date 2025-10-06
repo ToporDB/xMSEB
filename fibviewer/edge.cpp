@@ -10,7 +10,9 @@ Edge::Edge(QVector3D fn, QVector3D tn)
     points << fn << tn;
 }
 
-void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, bool dualGradient, bool useSpline) {
+void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, bool dualGradient, bool useSpline, Edge* selected) {
+    bool isSelected = (selected == this);
+
     if (startAndEndNodes) {
         glPointSize(10);
         glColor4f(0.0, 0.0, 0.0, alpha);
@@ -42,7 +44,9 @@ void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, b
         QVector3D nor = p1 - p2;
         QVector3D col1, col2;
 
-        if (dualGradient) {
+        if (isSelected) {
+            col1 = col2 = QVector3D(1.0f, 1.0f, 0.5f); // yellow
+        } else if (dualGradient) {
             float t1 = float(i) / float(count - 1);
             float t2 = float(i + 1) / float(count - 1);
 
@@ -59,7 +63,7 @@ void Edge::paintGL(bool intermediateNodes, bool startAndEndNodes, float alpha, b
             col1 = gradient(t1);
             col2 = gradient(t2);
         } else {
-            col1 = col2 = QVector3D(1.0f, 0.0f, 0.0f); // Solid red
+            col1 = col2 = QVector3D(1.0f, 0.0f, 0.0f); // solid red
         }
 
         glBegin(GL_LINES);

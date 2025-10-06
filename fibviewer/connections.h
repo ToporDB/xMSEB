@@ -36,6 +36,8 @@ public:
     QList<Primitive*> prims;
     void createPrims();
     void calculateBounds();
+    void selectForPoint(QVector3D* p);
+    Edge* selected;
 };
 
 #endif // CONNECTIONS_H

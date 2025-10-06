@@ -11,10 +11,12 @@ Connections::Connections()
     min = QVector3D(-100,-100,-100);
     max = QVector3D(100,100,100);
     piv = (max-min)/2;
+    selected = NULL;
 }
 
 Connections::Connections(QString nname, QString ename)
 {
+    selected = NULL;
     QFile n(nname);
     qDebug() << nname;
     if (!n.open(QIODevice::ReadOnly)) qDebug("nodes unreadable");
@@ -282,6 +284,22 @@ void Connections::sortCons(){
         p->depth = (z1+z2)/2.0;
     }
     std::sort(prims.begin(),prims.end(),primLTprim);
+}
+
+void Connections::selectForPoint(QVector3D* p){
+    double minD = edges.at(0)->minDist(*p);
+    int selI = 0;
+    for(int i = 1; i < edges.length(); i++) {
+        Edge* e = edges.at(i);
+        double dist = e->minDist(*p);
+        if (dist<minD) {
+            minD = dist;
+            selected = e;
+            selI = i;
+        }
+    }
+    if (minD > 100) selected = NULL;
+    qDebug() << "selectedEdge: " << selI;
 }
 
 void Connections::writeBinaryVTK(QString filename){
